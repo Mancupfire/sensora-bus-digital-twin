@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sensora · Pilot outline</title>
+<style>
+  body { font: 14px/1.5 Inter, "Segoe UI", system-ui, sans-serif; color: #10203a; margin: 0; background: #fff; }
+  main { max-width: 820px; margin: 0 auto; padding: 32px 36px; }
+  header { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 3px solid #b5e61d; padding-bottom: 8px; }
+  .wm { font-weight: 800; font-size: 26px; color: #1d3fbf; } .tag { color: #5a6b85; font-size: 12px; }
+  h1 { font-size: 26px; margin: 18px 0 4px; } h2 { font-size: 17px; color: #1d3fbf; margin: 20px 0 6px; }
+  .flag { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: #fff7d6; border: 1px solid #e0b400; }
+  .principle { font-weight: 700; } table { border-collapse: collapse; width: 100%; font-size: 13px; } td, th { border-bottom: 1px solid #d9e1ee; padding: 5px 6px; text-align: left; vertical-align: top; }
+  th { background: #f2f5fb; } .note { color: #5a6b85; font-size: 12px; } .noprint { margin: 12px 0; }
+  @media print { .noprint { display: none; } main { padding: 0; } @page { margin: 16mm; } }
+</style>
+</head>
+<body>
+<main id="doc"><p>Loading…</p></main>
+<script type="module">
+import { BRAND, PILOT, NOW_VS_PILOT, ABOUT_DEMO } from './content/story.js';
+const e = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const P = PILOT, B = P.budget, usd = (n) => `USD ${n.toLocaleString('en-US')}`;
+document.getElementById('doc').innerHTML = `
+<header><span class="wm">sensora</span><span class="tag">${e(BRAND.core)}</span></header>
+<p class="noprint"><button onclick="print()">Print / save as PDF</button> · <a href="index.html#pilot">Back to the demo</a></p>
+<h1>Pilot outline <span class="flag">PLANNED · NOT YET CARRIED OUT</span></h1>
+<p>${e(P.intro)}</p>
+<p class="principle">${P.principle.map(e).join(' → ')}</p>
+<h2>What the current demo shows</h2><ul>${NOW_VS_PILOT.now.map((x) => `<li>${e(x)}</li>`).join('')}</ul>
+<p class="note">${ABOUT_DEMO.map(([k, v]) => `<b>${e(k)}:</b> ${e(v)}`).join(' ')}</p>
+<h2>Phases (12 months)</h2>
+<table><tr><th>When</th><th>Phase</th><th>Activities</th><th>Milestone</th></tr>${P.phases.map((p) => `<tr><td>${e(p.when)}</td><td>${e(p.h)}</td><td>${e(p.p)}</td><td>${e(p.milestone)}</td></tr>`).join('')}</table>
+<h2>Proposed success measures</h2>
+<table><tr><th>Measure</th><th>How it would be measured</th></tr>${P.measures.map((m) => `<tr><td>${e(m.m)}</td><td>${e(m.how)}</td></tr>`).join('')}</table>
+<p class="note">${e(P.measuresNote)}</p>
+<h2>What a pilot needs from an operator</h2><ul>${P.needs.map((x) => `<li>${e(x)}</li>`).join('')}</ul>
+<h2>Safeguards</h2><ul>${P.safeguards.map((s) => `<li><b>${e(s.h)}:</b> ${e(s.p)}</li>`).join('')}</ul>
+<h2>${e(B.title)}</h2>
+<table><tr><th>Item</th><th>Estimate</th></tr>${B.items.map(([k, v]) => `<tr><td>${e(k)}</td><td>${usd(v)}</td></tr>`).join('')}<tr><td><b>Total (estimate)</b></td><td><b>${usd(B.total)}</b></td></tr></table>
+<ul class="note">${B.notes.map((n) => `<li>${e(n)}</li>`).join('')}</ul>`;
+document.body.dataset.ready = '1';
+</script>
+</body>
+</html>

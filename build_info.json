@@ -2,12 +2,12 @@
   "asset_version": "20261110155159",
   "run_id": "20261110T025048Z",
   "full_site": {
-    "files": 896,
-    "total_MB": 18.99
+    "files": 902,
+    "total_MB": 19.62
   },
   "public_site": {
-    "files": 888,
-    "total_MB": 15.9,
+    "files": 894,
+    "total_MB": 16.3,
     "omitted_images": [
       "reference/2aOboRAE2Q23r6J65hTPLEWnPeOTEU7o5DFvH504.jpg",
       "reference/2aOboRAG7X2zeVfWxC3luxp16eZhJrAHDOnfUj9U.jpg",
@@ -19,14 +19,14 @@
       "usd/bus_scene_preview.usdz"
     ]
   },
-  "code_MB": 0.84,
-  "first_view_bus_MB": 2.26,
-  "explore_inside_MB": 2.45,
+  "code_MB": 0.96,
+  "first_view_bus_MB": 2.66,
+  "explore_inside_MB": 2.84,
   "budget": {
     "first_view_bus_MB_max": 3.0,
     "explore_inside_MB_max": 4.0
   },
-  "largest_file_MB": 1.149,
+  "largest_file_MB": 1.4,
   "budget_ok": true,
   "profile": "public (GitHub Pages)"
 }

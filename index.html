@@ -3,117 +3,185 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sensora · Explore the Bus Cabin</title>
-<meta name="description" content="Explore temperature and airflow inside a simulated bus cabin. One simulated scenario, precomputed CFD and AI predictions.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b1730'/%3E%3Crect x='5' y='10' width='22' height='12' rx='3' fill='none' stroke='%2322d3ee' stroke-width='2.4'/%3E%3Ccircle cx='11' cy='24' r='2.2' fill='%23fb923c'/%3E%3Ccircle cx='22' cy='24' r='2.2' fill='%23fb923c'/%3E%3C/svg%3E">
+<title>Sensora · Cabin insight for bus operators</title>
+<meta name="description" content="Sensora demo: see how temperature and airflow vary across a bus cabin, zone by zone. Simulation-backed demonstration with one simulated scenario and precomputed AI reconstructions.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231d3fbf'/%3E%3Cpath d='M22 10.5c-1.6-1.6-7-2.2-9.6 0-2.4 2 .2 4.4 3.6 5.4 3.6 1 6 3.4 3.4 5.8-2.6 2.2-8 1.6-9.6 0' fill='none' stroke='%23b5e61d' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/app.css">
 <script type="importmap">{"imports": {"three": "./vendor/three/three.module.min.js"}}</script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
 <header class="topbar" role="banner">
-  <div class="brand"><span class="logo" aria-hidden="true"></span><span>Sensora <span class="dot">·</span> <b>Explore the Bus Cabin</b></span></div>
+  <a class="brand" href="#overview" aria-label="Sensora overview"><span class="logo" aria-hidden="true"></span><span class="wordmark">sensora</span></a>
   <nav class="modes" aria-label="Sections">
-    <button type="button" class="mode-btn" data-mode="explore" aria-pressed="true">Explore</button>
-    <button type="button" class="mode-btn" data-mode="images" aria-pressed="false" id="nav-images">CFD reference images</button>
+    <button type="button" class="mode-btn" data-mode="overview" aria-pressed="true">Overview</button>
+    <button type="button" class="mode-btn" data-mode="explore" aria-pressed="false">Explore cabin</button>
+    <button type="button" class="mode-btn" data-mode="pilot" aria-pressed="false">Pilot plan</button>
     <button type="button" class="mode-btn" data-mode="technical" aria-pressed="false">Technical details</button>
   </nav>
-  <span class="badge-static" title="Every value shown was computed in advance. Nothing is measured or predicted live, and there is no backend.">Precomputed · not live</span>
+  <button type="button" class="badge-static" id="badge-demo" aria-expanded="false" aria-controls="about-pop">Simulation-backed demo <span aria-hidden="true">ⓘ</span></button>
 </header>
+<div class="about-pop glass" id="about-pop" role="dialog" aria-labelledby="about-pop-h" hidden>
+  <div class="about-pop-head"><h2 id="about-pop-h">What this demo is</h2><button type="button" class="btn ghost small-btn" id="about-pop-close">Close</button></div>
+  <dl id="about-pop-body"></dl>
+  <p class="small"><a href="#technical/methods">More: methods and limits</a></p>
+</div>
 
 <main id="main">
   <div id="loading" class="loading" role="status" aria-live="polite">Loading the bus model…</div>
   <div id="fatal" class="fatal" role="alert" hidden></div>
 
-  <!-- ===================== EXPLORE (default) ===================== -->
+  <!-- ===================== OVERVIEW (default) ===================== -->
+  <section id="overview" class="mode" data-mode="overview" hidden>
+    <div class="hero-wrap">
+      <div class="hero-slot" id="ov-slot">
+        <div class="stage" id="stage" data-ctx="overview">
+          <div id="stage3d" class="stage3d" tabindex="0" aria-label="3D bus. Drag to rotate, scroll or pinch to zoom; when the cabin is open, click the coloured slice to inspect a location."></div>
+          <div id="labels" class="labels" aria-hidden="true"></div>
+          <div class="stage-top">
+            <span id="src-chip" class="src-chip">CFD reference</span>
+            <span id="ex-title" class="ex-title"></span>
+            <span id="ex-status" class="ex-status" role="status" aria-live="polite"></span>
+          </div>
+          <div class="viewbtns" role="group" aria-label="Camera views">
+            <button type="button" class="vbtn" data-cam="front">Front</button>
+            <button type="button" class="vbtn" data-cam="side">Side</button>
+            <button type="button" class="vbtn" data-cam="rear">Rear</button>
+            <button type="button" class="vbtn" data-cam="top">Top</button>
+            <button type="button" class="vbtn" data-cam="reset">Reset view</button>
+          </div>
+          <div class="ex-legend" id="ex-legend" aria-label="Colour legend"></div>
+        </div>
+      </div>
+      <div class="hero-card" id="hero-card">
+        <p class="kicker" id="hero-kicker"></p>
+        <h1 id="hero-title"></h1>
+        <p class="hero-sub" id="hero-sub"></p>
+        <div class="cta-row">
+          <a class="btn primary big" href="#explore" id="cta-explore"></a>
+          <a class="btn secondary big" href="#pilot" id="cta-pilot"></a>
+        </div>
+        <button type="button" class="btn link" id="btn-tour"></button>
+        <p class="hero-tag"><span class="dot-live" aria-hidden="true"></span><span id="hero-tag"></span> · <button type="button" class="btn link inline" id="hero-tag-more" aria-controls="about-pop">What does this mean?</button></p>
+      </div>
+      <div class="tour-card" id="tour-card" hidden role="region" aria-labelledby="tour-h" aria-live="polite">
+        <div class="tour-steps" id="tour-steps" aria-hidden="true"></div>
+        <p class="tour-count small muted" id="tour-count"></p>
+        <h2 id="tour-h"></h2>
+        <p id="tour-text"></p>
+        <div class="tour-extra" id="tour-extra"></div>
+        <div class="tour-nav">
+          <button type="button" class="btn" id="tour-back">Back</button>
+          <button type="button" class="btn primary" id="tour-next">Next</button>
+          <button type="button" class="btn ghost" id="tour-skip">Skip tour</button>
+        </div>
+      </div>
+    </div>
+    <p class="core-line" id="core-line"></p>
+    <section class="ov-sec" aria-labelledby="ov-problem-h"><h2 id="ov-problem-h"></h2><div class="cards3" id="ov-problem"></div><p class="evidence" id="ov-evidence"></p></section>
+    <section class="ov-sec" aria-labelledby="ov-flow-h"><h2 id="ov-flow-h">How Sensora works</h2><div class="flow" id="ov-flow"></div></section>
+    <section class="ov-sec" aria-labelledby="ov-now-h"><h2 id="ov-now-h">What this demo shows today, and what a pilot adds</h2><div class="nowpilot" id="ov-now"></div>
+      <div class="cta-band glass"><div><h3>See it for yourself</h3><p>Open the cabin, choose a zone and review it, or read how a pilot would work.</p></div>
+        <div class="cta-row"><a class="btn primary" href="#explore">Explore the cabin</a><a class="btn secondary" href="#pilot">See the pilot approach</a></div></div>
+    </section>
+  </section>
+
+  <!-- ===================== EXPLORE CABIN ===================== -->
   <section id="explore" class="mode" data-mode="explore" hidden>
     <div class="ex-grid">
-      <div class="stage glass" id="stage">
-        <div id="stage3d" class="stage3d" tabindex="0" aria-label="3D bus cabin. Drag to rotate, scroll or pinch to zoom, click the coloured slice to inspect a location."></div>
-        <div id="labels" class="labels" aria-hidden="true"></div>
-        <div class="intro" id="intro">
-          <h1>Explore the bus cabin</h1>
-          <p>Explore temperature and airflow inside a simulated bus cabin.</p>
-          <button type="button" class="btn primary big" id="btn-inside">Explore inside →</button>
-        </div>
-        <div class="stage-top">
-          <span id="ex-title" class="ex-title"></span>
-          <span id="ex-status" class="ex-status" role="status" aria-live="polite"></span>
-        </div>
-        <div class="viewbtns" role="group" aria-label="Camera views">
-          <button type="button" class="vbtn" data-cam="front">Front</button>
-          <button type="button" class="vbtn" data-cam="side">Side</button>
-          <button type="button" class="vbtn" data-cam="top">Top</button>
-          <button type="button" class="vbtn" data-cam="reset">Reset view</button>
-        </div>
-        <div class="ex-legend" id="ex-legend" aria-label="Colour legend"></div>
-      </div>
-
+      <div class="ex-slot" id="ex-slot"></div>
       <aside class="side glass" aria-label="Controls">
         <section class="scenario" aria-labelledby="scn-h">
-          <h2 id="scn-h">The scenario</h2>
+          <h2 id="scn-h">The simulated scenario</h2>
           <ul class="scn" id="scn-list">
-            <li><span class="ic" aria-hidden="true">👥</span><span><b data-scn="occupantCount">7</b> occupants</span></li>
+            <li><span class="ic" aria-hidden="true">👥</span><span><b data-scn="occupantCount">7</b> people</span></li>
             <li><span class="ic" aria-hidden="true">❄</span><span>Supply air <b><span data-scn="supplyTemperatureC">18</span> °C</b></span></li>
             <li><span class="ic" aria-hidden="true">☀</span><span>Outdoor <b><span data-scn="outdoorTemperatureC">35</span> °C</b></span></li>
-            <li data-scn-li="solarLoadIncluded"><span class="ic" aria-hidden="true">◐</span><span>Solar heating included</span></li>
+            <li data-scn-li="solarLoadIncluded"><span class="ic" aria-hidden="true">◐</span><span>Sun on the bus</span></li>
           </ul>
-          <p class="small muted">One simulated scenario · precomputed CFD and AI predictions.</p>
+          <p class="small muted">One simulated scenario · results computed in advance.</p>
         </section>
-
         <fieldset class="ctl">
           <legend>Show</legend>
           <div class="seg2" role="radiogroup" aria-label="Quantity">
             <button type="button" role="radio" data-var="T" aria-checked="true">Temperature</button>
-            <button type="button" role="radio" data-var="speed" aria-checked="false">Airflow speed</button>
+            <button type="button" role="radio" data-var="speed" aria-checked="false">Airflow</button>
           </div>
         </fieldset>
         <fieldset class="ctl">
-          <legend>Look</legend>
-          <div class="seg2" role="radiogroup" aria-label="Look">
-            <button type="button" role="radio" data-look="inside" aria-checked="false">View inside</button>
-            <button type="button" role="radio" data-look="exterior" aria-checked="true">Show exterior</button>
+          <legend>View</legend>
+          <div class="seg2" role="radiogroup" aria-label="View">
+            <button type="button" role="radio" data-look="exterior" aria-checked="false">Exterior</button>
+            <button type="button" role="radio" data-look="inside" aria-checked="true">Look inside</button>
+          </div>
+          <div class="seg3" role="radiogroup" aria-label="Inside view style" id="style-row">
+            <button type="button" role="radio" data-style="cutaway" aria-checked="true">Cutaway</button>
+            <button type="button" role="radio" data-style="xray" aria-checked="false">X-ray</button>
+            <button type="button" role="radio" data-style="field" aria-checked="false">Field focus</button>
           </div>
         </fieldset>
         <fieldset class="ctl">
-          <legend>Slice through the cabin</legend>
-          <label class="lbl" for="ex-orient">Direction</label>
-          <select id="ex-orient">
-            <option value="horizontal">Floor-to-ceiling (choose a height)</option>
-            <option value="longitudinal">Along the bus (choose a side position)</option>
-            <option value="transverse">Across the bus (choose front to rear)</option>
-          </select>
-          <label class="lbl" for="ex-pos" id="ex-pos-lbl">Height</label>
-          <input id="ex-pos" type="range" min="0" max="0" step="1" value="0">
-          <output id="ex-pos-out" class="small" for="ex-pos"></output>
+          <legend>Zone</legend>
+          <div class="zone-list" id="zone-list" role="group" aria-label="Cabin zones"></div>
         </fieldset>
-        <p class="tip"><span aria-hidden="true">👆</span> Click inside the coloured slice to inspect a location.</p>
-        <div class="saved" id="saved-wrap" hidden>
-          <div class="saved-h">Saved locations</div>
-          <div class="saved-list" id="saved-list"></div>
-        </div>
-        <details class="ctl more">
-          <summary>More display options</summary>
-          <label class="chk"><input type="checkbox" id="ex-labels" checked> Labels</label>
-          <label class="chk"><input type="checkbox" data-exlayer="body" checked> Bus body (walls, windows, doors, roof)</label>
-          <label class="chk"><input type="checkbox" data-exlayer="occupants" checked> People</label>
-          <label class="chk"><input type="checkbox" data-exlayer="seats" checked> Seats</label>
-          <label class="chk"><input type="checkbox" data-exlayer="hvac" checked> Air vents and openings</label>
-          <label class="chk"><input type="checkbox" data-exlayer="slice" checked> Coloured slice</label>
-          <label class="chk"><input type="checkbox" id="ex-arrows"> Flow direction arrows</label>
+        <p class="tip"><span aria-hidden="true">👆</span> Click the coloured slice to inspect a spot.</p>
+        <button type="button" class="btn" id="btn-reset-view">Reset view</button>
+        <details class="ctl adv" id="adv">
+          <summary>Advanced: data source, slice, comparison</summary>
+          <div class="adv-body">
+            <div class="lbl">Data source</div>
+            <div class="seg2 src4" role="radiogroup" aria-label="Data source" id="adv-src">
+              <button type="button" role="radio" data-src="cfd" aria-checked="true">CFD reference</button>
+              <button type="button" role="radio" data-src="vanilla" aria-checked="false">Vanilla</button>
+              <button type="button" role="radio" data-src="pn" aria-checked="false">PN</button>
+              <button type="button" role="radio" data-src="pi" aria-checked="false">PI-PN</button>
+            </div>
+            <p class="small muted">AI reconstructions are precomputed by three neural networks trained on part of the simulation. They include known errors; compare them with the CFD reference.</p>
+            <label class="lbl" for="ex-orient">Slice direction</label>
+            <select id="ex-orient">
+              <option value="horizontal">Floor-to-ceiling (choose a height)</option>
+              <option value="longitudinal">Along the bus (choose a side position)</option>
+              <option value="transverse">Across the bus (choose front to rear)</option>
+            </select>
+            <label class="lbl" for="ex-pos" id="ex-pos-lbl">Height</label>
+            <input id="ex-pos" type="range" min="0" max="0" step="1" value="0">
+            <output id="ex-pos-out" class="small" for="ex-pos"></output>
+            <div class="saved" id="saved-wrap" hidden>
+              <div class="saved-h">Saved locations</div>
+              <div class="saved-list" id="saved-list"></div>
+            </div>
+            <div class="lbl">Display</div>
+            <label class="chk"><input type="checkbox" id="ex-labels" checked> Labels</label>
+            <label class="chk"><input type="checkbox" data-exlayer="exterior" checked> Illustrative body and wheels</label>
+            <label class="chk"><input type="checkbox" data-exlayer="body" checked> Cabin walls, windows and doors</label>
+            <label class="chk"><input type="checkbox" data-exlayer="occupants" checked> People</label>
+            <label class="chk"><input type="checkbox" data-exlayer="seats" checked> Seats</label>
+            <label class="chk"><input type="checkbox" data-exlayer="hvac" checked> Air vents and openings</label>
+            <label class="chk"><input type="checkbox" data-exlayer="slice" checked> Coloured slice</label>
+            <label class="chk"><input type="checkbox" id="ex-arrows"> Flow direction arrows</label>
+            <label class="chk"><input type="checkbox" id="ex-sensors"> Proposed sensor locations (pilot)</label>
+            <button type="button" class="btn compare-btn" id="btn-compare" aria-expanded="false" aria-controls="compare">Compare AI reconstructions</button>
+            <p class="small"><a href="#technical/explorer?var=p&amp;view=horizontal&amp;display=cfd">Error maps and pressure</a> · <a href="#technical/results">Model metrics</a></p>
+          </div>
         </details>
-        <button type="button" class="btn compare-btn" id="btn-compare" aria-expanded="false" aria-controls="compare">Compare AI predictions</button>
       </aside>
     </div>
 
-    <section class="location glass" id="location" aria-live="polite" aria-labelledby="loc-h">
-      <h2 id="loc-h">Selected location</h2>
-      <div id="loc-body"><p class="muted">Click inside the coloured slice to see the temperature and airflow at that spot.</p></div>
-    </section>
+    <div class="ex-below">
+      <section class="zone-card glass" id="zone-card" aria-live="polite" aria-labelledby="zone-h">
+        <h2 id="zone-h">Zone review</h2>
+        <div id="zone-body"></div>
+        <div class="review-list" id="review-list" hidden></div>
+      </section>
+      <section class="location glass" id="location" aria-live="polite" aria-labelledby="loc-h">
+        <h2 id="loc-h">Selected location</h2>
+        <div id="loc-body"><p class="muted">Click inside the coloured slice to see the temperature and airflow at that spot.</p></div>
+      </section>
+    </div>
 
     <section class="compare glass" id="compare" hidden aria-labelledby="cmp-h">
       <div class="cmp-head">
-        <h2 id="cmp-h">Compare AI predictions with the CFD reference</h2>
+        <h2 id="cmp-h">Compare AI reconstructions with the CFD reference</h2>
         <button type="button" class="btn ghost" id="btn-compare-close">Close</button>
       </div>
       <p class="lead-s">Three neural networks were trained on <b>part</b> of this one CFD simulation and then asked to fill in the regions they never saw. Below: the same slice and the same colour scale for the CFD reference and each network. All values are precomputed.</p>
@@ -124,16 +192,9 @@
     </section>
   </section>
 
-  <!-- ===================== CFD REFERENCE IMAGES ===================== -->
-  <section id="images" class="mode page" data-mode="images" hidden>
-    <div class="page-inner">
-      <h1>CFD reference images</h1>
-      <p class="lead">Images supplied with the simulation case. They were <b>not</b> made by this demo. The positions of the section planes were not recorded, so each plane below is <b>estimated</b> by matching the image colours to the exported data. This is a visual consistency check, not a numerical validation.</p>
-      <div id="images-none" class="callout" hidden>This public build does not include the supplied CAD view and STAR-CCM+ renders, because permission to publish them has not been confirmed. They are kept in the local / offline version.</div>
-      <figure class="glass cad-fig" id="cad-fig"><img id="cad-img" alt="Exterior CAD view of the simulated bus, front" loading="lazy">
-        <figcaption id="cad-cap"></figcaption></figure>
-      <div class="ref-gallery" id="ref-gallery"></div>
-    </div>
+  <!-- ===================== PILOT PLAN ===================== -->
+  <section id="pilot" class="mode page" data-mode="pilot" hidden>
+    <div class="page-inner" id="pilot-body"></div>
   </section>
 
   <!-- ===================== TECHNICAL DETAILS ===================== -->
@@ -143,7 +204,8 @@
       <button type="button" class="sub-btn" data-sub="explorer" aria-pressed="false">Error explorer</button>
       <button type="button" class="sub-btn" data-sub="curves" aria-pressed="false">Learning curves</button>
       <button type="button" class="sub-btn" data-sub="scene" aria-pressed="false">Scene architecture</button>
-      <button type="button" class="sub-btn" data-sub="methods" aria-pressed="false">Methods, provenance &amp; limits</button>
+      <button type="button" class="sub-btn" data-sub="methods" aria-pressed="false">About the demo, methods &amp; limits</button>
+      <button type="button" class="sub-btn" data-sub="images" aria-pressed="false" id="nav-images">CFD reference images</button>
     </nav>
 
     <!-- results -->
@@ -274,6 +336,18 @@
       <div id="scene-body"><p class="muted">Loading…</p></div>
     </section>
 
+    <!-- reference images (moved from the top level; #images redirects here) -->
+  <section class="tsub page-inner" data-sub="images" id="t-images" hidden>
+    <div>
+      <h1>CFD reference images</h1>
+      <p class="lead">Images supplied with the simulation case. They were <b>not</b> made by this demo. The positions of the section planes were not recorded, so each plane below is <b>estimated</b> by matching the image colours to the exported data. This is a visual consistency check, not a numerical validation.</p>
+      <div id="images-none" class="callout" hidden>This public build does not include the supplied CAD view and STAR-CCM+ renders, because permission to publish them has not been confirmed. They are kept in the local / offline version.</div>
+      <figure class="glass cad-fig" id="cad-fig"><img id="cad-img" alt="Exterior CAD view of the simulated bus, front" loading="lazy">
+        <figcaption id="cad-cap"></figcaption></figure>
+      <div class="ref-gallery" id="ref-gallery"></div>
+    </div>
+  </section>
+
     <!-- methods -->
     <section class="tsub page-inner" data-sub="methods" id="t-methods" hidden>
       <div class="about-inner glass" id="about-body"></div>
@@ -282,7 +356,7 @@
     </section>
   </section>
 </main>
-<footer class="foot small muted">Sensora · Explore the Bus Cabin · run <span data-bind="run_id"></span> · assets <span data-bind="asset_version"></span> · precomputed, static, no backend<span id="build-profile"></span></footer>
+<footer class="foot small muted"><span id="foot-core"></span><br>Simulation-backed demonstration · illustrative exterior; cabin fields come from the CFD dataset · run <span data-bind="run_id"></span> · assets <span data-bind="asset_version"></span> · static site, no backend<span id="build-profile"></span></footer>
 <script type="module" src="js/main.js"></script>
 </body>
 </html>

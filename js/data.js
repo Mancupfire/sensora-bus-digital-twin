@@ -5,8 +5,11 @@ let manifest = null;
 let metrics = null;
 export const net = { requests: [] };
 
+// files exported from the USD stage are versioned by their own sha256 (from data/usd/web_manifest.json): the
+// scene can change while the scientific asset_version stays the same, and stale caches must not mix versions
+let usdVer = {};
 export function assetURL(rel) {
-  const v = manifest ? `?v=${encodeURIComponent(manifest.asset_version)}` : `?t=${Date.now()}`;
+  const v = usdVer[rel] ? `?v=${usdVer[rel]}` : manifest ? `?v=${encodeURIComponent(manifest.asset_version)}` : `?t=${Date.now()}`;
   return new URL(`data/${rel}${v}`, document.baseURI).toString();
 }
 
@@ -21,6 +24,10 @@ let scene = null;
 export async function loadManifest() {
   manifest = await fetchChecked(new URL('data/manifest.json', document.baseURI) + `?t=${Date.now()}`, 'json');
   metrics = await fetchChecked(assetURL('metrics.json'), 'json');
+  try {
+    const wm = await fetchChecked(new URL('data/usd/web_manifest.json', document.baseURI) + `?t=${Date.now()}`, 'json');
+    usdVer = Object.fromEntries(Object.entries(wm.files).map(([f, m]) => [`usd/${f}`, m.sha256.slice(0, 16)]));
+  } catch (e) { console.warn('usd/web_manifest.json not loaded:', e.message); usdVer = {}; }
   // scene description exported from the OpenUSD stage (optional: the app falls back to point clouds without it)
   if (manifest.scene) {
     try { scene = await fetchChecked(assetURL(manifest.scene.file), 'json'); } catch (e) { console.warn('scene.json not loaded:', e.message); scene = null; }

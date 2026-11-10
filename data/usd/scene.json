@@ -1,8 +1,8 @@
 {
  "schema": "sensora-usd-web/1",
- "export_version": "sensora-usd/1.0",
+ "export_version": "sensora-usd/1.1",
  "usd_version": "0.26.11",
- "exported_utc": "2026-11-10T08:52:04Z",
+ "exported_utc": "2026-11-10T13:08:34Z",
  "stage": {
   "root": "bus_scene.usda",
   "defaultPrim": "/World",
@@ -11,18 +11,23 @@
   "layer_stack_strongest_first": [
    {
     "layer": "bus_scene.usda",
-    "sha256": "956491b42c00fcacb5d71725aa39e05f2e1991ed8661d1b2a5a79b5ab1a8945a",
+    "sha256": "beadd04416d33f8fb70d357fcee787f44a242c22cc4635c721a138d3af154e81",
     "doc": "Sensora bus digital twin: OpenUSD scene of ONE steady RANS CFD case and three neural surrogates' precomputed predictions. Scene organisation only; not a solver."
    },
    {
     "layer": "layers/presentation.usda",
-    "sha256": "9d9fbb7576c4806c9732932a71a180ff28f108ab9cb07647cb66a6cc98226e0c",
+    "sha256": "8806922482b63f128a885c5589ec6120c93998d95a60a4119807c685c258c69d",
     "doc": "Sensora bus scene: cameras, materials, bindings, visibility, labels (look & feel only)"
    },
    {
     "layer": "layers/probes.usda",
     "sha256": "31ebbf184bade0e662957e5d8e8dd6a19c413a53a04bd479ec8aee758d243a7b",
     "doc": "Sensora bus scene: virtual probe definitions (+ cached values written by the application)"
+   },
+   {
+    "layer": "layers/zones.usda",
+    "sha256": "69956b9e516366a37788e838e9bdf2efcace67340ef82caac3a63052af9bab55",
+    "doc": "Sensora bus scene: cabin zones (driver / front / middle / rear) derived from CFD patch landmarks"
    },
    {
     "layer": "layers/results.usda",
@@ -40,18 +45,23 @@
     "doc": "Sensora bus scene: the single steady CFD case: metadata and boundary conditions on patch prims"
    },
    {
+    "layer": "layers/exterior.usda",
+    "sha256": "14d508d4f37ddbc98777adb13130a01d909f1b2266c4bb23b375447a5d8a832b",
+    "doc": "Sensora bus scene: ILLUSTRATIVE exterior shell (presentation only): reference to assets/exterior_illustrative.usdc + alignment transform"
+   },
+   {
     "layer": "layers/geometry.usdc",
     "sha256": "44f580deb418cfb96d4c37c6ad708a5ccbebbe38eb7a5cc6ac43a5c6434a0a4e",
     "doc": "Sensora bus scene: boundary patches as reconstructed display meshes / point sets, identities"
    }
   ],
   "built": {
-   "exportVersion": "sensora-usd/1.0",
+   "exportVersion": "sensora-usd/1.1",
    "usdVersion": "0.26.11",
    "runId": "20261110T025048Z",
    "caseId": "VinBus_V2_CoTaiXe_CoNang",
-   "gitCommit": "549f455",
-   "builtUtc": "2026-11-10T08:52:03Z"
+   "gitCommit": "7708166",
+   "builtUtc": "2026-11-10T13:06:10Z"
   },
   "frame": "X rearward along the bus, Y lateral (doors at Y>0), Z up; metres; origin front-bottom",
   "web_frame": "identical to the CFD frame (Z up); see web/js/frame.js"
@@ -60,17 +70,17 @@
   "file": "usd/geometry.bin",
   "quant_bbox": {
    "lo": [
-    0.0533805219966009,
-    -1.1800000000000002,
-    0.3799999999999997
+    -0.58,
+    -1.76,
+    -0.01
    ],
    "hi": [
-    8.550000000000002,
-    1.2150000000000003,
-    2.650000000000001
+    9.15,
+    1.76,
+    3.03
    ]
   },
-  "representation": "reconstructed_display_mesh (display only; not the solver mesh or CAD)",
+  "representation": "CFD patches: reconstructed_display_mesh (display only; not the solver mesh or CAD); /World/Bus/Exterior: illustrative_exterior (not CAD, not in the CFD domain)",
   "prims": [
    {
     "path": "/World/Bus/Geometry/Occupants/Human_Dung_2/Mouth",
@@ -79,6 +89,8 @@
     "boundary_role": "inlet_mass_flow_mouth",
     "representation": "boundary_face_centres",
     "group": "Geometry/Occupants",
+    "decorative": false,
+    "in_cfd_domain": true,
     "visible": true,
     "look": "/World/Looks/Mouth",
     "source_faces": 60,
@@ -97,6 +109,8 @@
     "boundary_role": "wall_heat_flux",
     "representation": "reconstructed_display_mesh",
     "group": "Geometry/Occupants",
+    "decorative": false,
+    "in_cfd_domain": true,
     "visible": true,
     "look": "/World/Looks/Skin",
     "source_faces": 7282,
@@ -113,6 +127,8 @@
     "boundary_role": "inlet_mass_flow_mouth",
     "representation": "boundary_face_centres",
     "group": "Geometry/Occupants",
+    "decorative": false,
+    "in_cfd_domain": true,
     "visible": true,
     "look": "/World/Looks/Mouth",
     "source_faces": 60,
@@ -131,6 +147,8 @@
     "boundary_role": "wall_heat_flux",
     "representation": "reconstructed_display_mesh",
     "group": "Geometry/Occupants",
+    "decorative": false,
+    "in_cfd_domain": true,
     "visible": true,
     "look": "/World/Looks/Skin",
     "source_faces": 7169,
@@ -147,6 +165,8 @@
     "boundary_role": "inlet_mass_flow_mouth",
     "representation": "boundary_face_centres",
     "group": "Geometry/Occupants",
+    "decorative": false,
+    "in_cfd_domain": true,
     "visible": true,
     "look": "/World/Looks/Mouth",
     "source_faces": 60,
@@ -165,6 +185,8 @@
     "boundary_role": "wall_heat_flux",
     "representation": "reconstructed_display_mesh",
     "group": "Geometry/Occupants",
+    "decorative": false,
+    "in_cfd_domain": true,
     "visible": true,
     "look": "/World/Looks/Skin",
     "source_faces": 7159,
@@ -181,6 +203,8 @@
     "boundary_role": "inlet_mass_flow_mouth",
     "representation": "boundary_face_centres",
     "group": "Geometry/Occupants",
+    "decorative": false,
+    "in_cfd_domain": true,
     "visible": true,
     "look": "/World/Looks/Mouth",
     "source_faces": 60,
@@ -199,6 +223,8 @@
     "boundary_role": "wall_heat_flux",
     "representation": "reconstructed_display_mesh",
     "group": "Geometry/Occupants",
+    "decorative": false,
+    "in_cfd_domain": true,
     "visible": true,
     "look": "/World/Looks/Skin",
     "source_faces": 7182,
@@ -215,6 +241,8 @@
     "boundary_role": "inlet_mass_flow_mouth",
     "representation": "boundary_face_centres",
     "group": "Geometry/Occupants",
+    "decorative": false,
+    "in_cfd_domain": true,
     "visible": true,
     "look": "/World/Looks/Mouth",
     "source_faces": 60,
@@ -233,6 +261,8 @@
     "boundary_role": "wall_heat_flux",
     "representation": "reconstructed_display_mesh",
     "group": "Geometry/Occupants",
+    "decorative": false,
+    "in_cfd_domain": true,
     "visible": true,
     "look": "/World/Looks/Skin",
     "source_faces": 6403,
@@ -249,6 +279,8 @@
     "boundary_role": "inlet_mass_flow_mouth",
     "representation": "boundary_face_centres",
     "group": "Geometry/Occupants",
+    "decorative": false,
+    "in_cfd_domain": true,
     "visible": true,
     "look": "/World/Looks/Mouth",
     "source_faces": 60,
@@ -267,6 +299,8 @@
     "boundary_role": "wall_heat_flux",
     "representation": "reconstructed_display_mesh",
     "group": "Geometry/Occupants",
+    "decorative": false,
+    "in_cfd_domain": true,
     "visible": true,
     "look": "/World/Looks/Skin",
     "source_faces": 5793,
@@ -283,6 +317,8 @@
     "boundary_role": "inlet_mass_flow_mouth",
     "representation": "boundary_face_centres",
     "group": "Geometry/Occupants",
+    "decorative": false,
+    "in_cfd_domain": true,
     "visible": true,
     "look": "/World/Looks/Mouth",
     "source_faces": 60,
@@ -301,6 +337,8 @@
     "boundary_role": "wall_heat_flux",
     "representation": "reconstructed_display_mesh",
     "group": "Geometry/Occupants",
+    "decorative": false,
+    "in_cfd_domain": true,
     "visible": true,
     "look": "/World/Looks/Skin",
     "source_faces": 6766,
@@ -317,6 +355,8 @@
     "boundary_role": "wall_convection",
     "representation": "reconstructed_display_mesh",
     "group": "Geometry/Seats",
+    "decorative": false,
+    "in_cfd_domain": true,
     "visible": true,
     "look": "/World/Looks/Seat",
     "source_faces": 17484,
@@ -333,6 +373,8 @@
     "boundary_role": "wall_convection",
     "representation": "reconstructed_display_mesh",
     "group": "Geometry/Shell",
+    "decorative": false,
+    "in_cfd_domain": true,
     "visible": true,
     "look": "/World/Looks/Roof",
     "source_faces": 25857,
@@ -349,6 +391,8 @@
     "boundary_role": "wall_adiabatic",
     "representation": "reconstructed_display_mesh",
     "group": "Geometry/Shell",
+    "decorative": false,
+    "in_cfd_domain": true,
     "visible": true,
     "look": "/World/Looks/BodyPanel",
     "source_faces": 6271,
@@ -365,6 +409,8 @@
     "boundary_role": "wall_adiabatic",
     "representation": "reconstructed_display_mesh",
     "group": "Geometry/Shell",
+    "decorative": false,
+    "in_cfd_domain": true,
     "visible": true,
     "look": "/World/Looks/BodyPanel",
     "source_faces": 12013,
@@ -381,6 +427,8 @@
     "boundary_role": "wall_adiabatic",
     "representation": "reconstructed_display_mesh",
     "group": "Geometry/Shell",
+    "decorative": false,
+    "in_cfd_domain": true,
     "visible": true,
     "look": "/World/Looks/BodyPanel",
     "source_faces": 17230,
@@ -397,6 +445,8 @@
     "boundary_role": "wall_convection",
     "representation": "reconstructed_display_mesh",
     "group": "Geometry/Shell",
+    "decorative": false,
+    "in_cfd_domain": true,
     "visible": true,
     "look": "/World/Looks/BodyPanel",
     "source_faces": 6898,
@@ -413,6 +463,8 @@
     "boundary_role": "wall_convection",
     "representation": "reconstructed_display_mesh",
     "group": "Geometry/Shell",
+    "decorative": false,
+    "in_cfd_domain": true,
     "visible": true,
     "look": "/World/Looks/BodyPanel",
     "source_faces": 105,
@@ -429,6 +481,8 @@
     "boundary_role": "wall_adiabatic",
     "representation": "reconstructed_display_mesh",
     "group": "Geometry/Shell",
+    "decorative": false,
+    "in_cfd_domain": true,
     "visible": true,
     "look": "/World/Looks/BodyPanel",
     "source_faces": 4350,
@@ -445,6 +499,8 @@
     "boundary_role": "wall_convection",
     "representation": "reconstructed_display_mesh",
     "group": "Geometry/Doors",
+    "decorative": false,
+    "in_cfd_domain": true,
     "visible": true,
     "look": "/World/Looks/Door",
     "source_faces": 5051,
@@ -461,6 +517,8 @@
     "boundary_role": "wall_convection",
     "representation": "reconstructed_display_mesh",
     "group": "Geometry/Doors",
+    "decorative": false,
+    "in_cfd_domain": true,
     "visible": true,
     "look": "/World/Looks/Door",
     "source_faces": 7159,
@@ -477,6 +535,8 @@
     "boundary_role": "wall_convection",
     "representation": "reconstructed_display_mesh",
     "group": "Geometry/Floor",
+    "decorative": false,
+    "in_cfd_domain": true,
     "visible": true,
     "look": "/World/Looks/Floor",
     "source_faces": 24764,
@@ -493,6 +553,8 @@
     "boundary_role": "wall_convection",
     "representation": "reconstructed_display_mesh",
     "group": "Geometry/Windows",
+    "decorative": false,
+    "in_cfd_domain": true,
     "visible": true,
     "look": "/World/Looks/Glass",
     "source_faces": 4794,
@@ -509,6 +571,8 @@
     "boundary_role": "wall_convection",
     "representation": "reconstructed_display_mesh",
     "group": "Geometry/Windows",
+    "decorative": false,
+    "in_cfd_domain": true,
     "visible": true,
     "look": "/World/Looks/Glass",
     "source_faces": 716,
@@ -525,6 +589,8 @@
     "boundary_role": "wall_convection",
     "representation": "reconstructed_display_mesh",
     "group": "Geometry/Windows",
+    "decorative": false,
+    "in_cfd_domain": true,
     "visible": true,
     "look": "/World/Looks/Glass",
     "source_faces": 3393,
@@ -541,6 +607,8 @@
     "boundary_role": "wall_convection",
     "representation": "reconstructed_display_mesh",
     "group": "Geometry/Windows",
+    "decorative": false,
+    "in_cfd_domain": true,
     "visible": true,
     "look": "/World/Looks/Glass",
     "source_faces": 1572,
@@ -557,6 +625,8 @@
     "boundary_role": "inlet_mass_flow_hvac",
     "representation": "reconstructed_display_mesh",
     "group": "HVAC/Supply",
+    "decorative": false,
+    "in_cfd_domain": true,
     "visible": true,
     "look": "/World/Looks/SupplyVent",
     "source_faces": 340,
@@ -573,6 +643,8 @@
     "boundary_role": "inlet_mass_flow_hvac",
     "representation": "reconstructed_display_mesh",
     "group": "HVAC/Supply",
+    "decorative": false,
+    "in_cfd_domain": true,
     "visible": true,
     "look": "/World/Looks/SupplyVent",
     "source_faces": 458,
@@ -589,6 +661,8 @@
     "boundary_role": "inlet_mass_flow_hvac",
     "representation": "reconstructed_display_mesh",
     "group": "HVAC/Supply",
+    "decorative": false,
+    "in_cfd_domain": true,
     "visible": true,
     "look": "/World/Looks/SupplyVent",
     "source_faces": 4386,
@@ -605,6 +679,8 @@
     "boundary_role": "inlet_mass_flow_hvac",
     "representation": "reconstructed_display_mesh",
     "group": "HVAC/Supply",
+    "decorative": false,
+    "in_cfd_domain": true,
     "visible": true,
     "look": "/World/Looks/SupplyVent",
     "source_faces": 4978,
@@ -621,6 +697,8 @@
     "boundary_role": "pressure_outlet_leak",
     "representation": "reconstructed_display_mesh",
     "group": "HVAC/Leaks",
+    "decorative": false,
+    "in_cfd_domain": true,
     "visible": true,
     "look": "/World/Looks/LeakSlot",
     "source_faces": 2272,
@@ -637,6 +715,8 @@
     "boundary_role": "pressure_outlet_leak",
     "representation": "reconstructed_display_mesh",
     "group": "HVAC/Leaks",
+    "decorative": false,
+    "in_cfd_domain": true,
     "visible": true,
     "look": "/World/Looks/LeakSlot",
     "source_faces": 3252,
@@ -653,6 +733,8 @@
     "boundary_role": "velocity_inlet_return",
     "representation": "reconstructed_display_mesh",
     "group": "HVAC/Return",
+    "decorative": false,
+    "in_cfd_domain": true,
     "visible": true,
     "look": "/World/Looks/ReturnGrille",
     "source_faces": 1915,
@@ -661,6 +743,294 @@
     "i_offset": 1197152,
     "n_tris": 1196,
     "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/Exterior/Body",
+    "zone": null,
+    "role": "exterior_body",
+    "boundary_role": null,
+    "representation": "illustrative_exterior",
+    "group": "Exterior/Body",
+    "decorative": true,
+    "in_cfd_domain": false,
+    "visible": true,
+    "look": "/World/Looks/ExteriorBody",
+    "source_faces": null,
+    "v_offset": 1204328,
+    "n_verts": 2802,
+    "i_offset": 1221140,
+    "n_tris": 4094,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/Exterior/Roof",
+    "zone": null,
+    "role": "exterior_roof",
+    "boundary_role": null,
+    "representation": "illustrative_exterior",
+    "group": "Exterior/Roof",
+    "decorative": true,
+    "in_cfd_domain": false,
+    "visible": true,
+    "look": "/World/Looks/ExteriorRoof",
+    "source_faces": null,
+    "v_offset": 1245704,
+    "n_verts": 6777,
+    "i_offset": 1286368,
+    "n_tris": 12266,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/Exterior/SideGlazing",
+    "zone": null,
+    "role": "exterior_glass",
+    "boundary_role": null,
+    "representation": "illustrative_exterior",
+    "group": "Exterior/SideGlazing",
+    "decorative": true,
+    "in_cfd_domain": false,
+    "visible": true,
+    "look": "/World/Looks/ExteriorGlass",
+    "source_faces": null,
+    "v_offset": 1359964,
+    "n_verts": 3562,
+    "i_offset": 1381336,
+    "n_tris": 6324,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/Exterior/Windscreen",
+    "zone": null,
+    "role": "exterior_glass",
+    "boundary_role": null,
+    "representation": "illustrative_exterior",
+    "group": "Exterior/Windscreen",
+    "decorative": true,
+    "in_cfd_domain": false,
+    "visible": true,
+    "look": "/World/Looks/ExteriorGlass",
+    "source_faces": null,
+    "v_offset": 1419280,
+    "n_verts": 286,
+    "i_offset": 1420996,
+    "n_tris": 504,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/Exterior/RearWindow",
+    "zone": null,
+    "role": "exterior_glass",
+    "boundary_role": null,
+    "representation": "illustrative_exterior",
+    "group": "Exterior/RearWindow",
+    "decorative": true,
+    "in_cfd_domain": false,
+    "visible": true,
+    "look": "/World/Looks/ExteriorGlass",
+    "source_faces": null,
+    "v_offset": 1424020,
+    "n_verts": 198,
+    "i_offset": 1425208,
+    "n_tris": 340,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/Exterior/Doors",
+    "zone": null,
+    "role": "exterior_door",
+    "boundary_role": null,
+    "representation": "illustrative_exterior",
+    "group": "Exterior/Doors",
+    "decorative": true,
+    "in_cfd_domain": false,
+    "visible": true,
+    "look": "/World/Looks/ExteriorDoorGlass",
+    "source_faces": null,
+    "v_offset": 1427248,
+    "n_verts": 456,
+    "i_offset": 1429984,
+    "n_tris": 792,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/Exterior/Trim",
+    "zone": null,
+    "role": "exterior_trim",
+    "boundary_role": null,
+    "representation": "illustrative_exterior",
+    "group": "Exterior/Trim",
+    "decorative": true,
+    "in_cfd_domain": false,
+    "visible": true,
+    "look": "/World/Looks/ExteriorTrim",
+    "source_faces": null,
+    "v_offset": 1434736,
+    "n_verts": 424,
+    "i_offset": 1437280,
+    "n_tris": 464,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/Exterior/Accent",
+    "zone": null,
+    "role": "exterior_accent",
+    "boundary_role": null,
+    "representation": "illustrative_exterior",
+    "group": "Exterior/Accent",
+    "decorative": true,
+    "in_cfd_domain": false,
+    "visible": true,
+    "look": "/World/Looks/ExteriorAccent",
+    "source_faces": null,
+    "v_offset": 1440064,
+    "n_verts": 542,
+    "i_offset": 1443316,
+    "n_tris": 524,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/Exterior/Headlights",
+    "zone": null,
+    "role": "exterior_light",
+    "boundary_role": null,
+    "representation": "illustrative_exterior",
+    "group": "Exterior/Headlights",
+    "decorative": true,
+    "in_cfd_domain": false,
+    "visible": true,
+    "look": "/World/Looks/ExteriorLight",
+    "source_faces": null,
+    "v_offset": 1446460,
+    "n_verts": 36,
+    "i_offset": 1446676,
+    "n_tris": 40,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/Exterior/TailLights",
+    "zone": null,
+    "role": "exterior_light",
+    "boundary_role": null,
+    "representation": "illustrative_exterior",
+    "group": "Exterior/TailLights",
+    "decorative": true,
+    "in_cfd_domain": false,
+    "visible": true,
+    "look": "/World/Looks/ExteriorTailLight",
+    "source_faces": null,
+    "v_offset": 1446916,
+    "n_verts": 36,
+    "i_offset": 1447132,
+    "n_tris": 40,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/Exterior/WheelWells",
+    "zone": null,
+    "role": "exterior_wheel_well",
+    "boundary_role": null,
+    "representation": "illustrative_exterior",
+    "group": "Exterior/WheelWells",
+    "decorative": true,
+    "in_cfd_domain": false,
+    "visible": true,
+    "look": "/World/Looks/ExteriorWheelWell",
+    "source_faces": null,
+    "v_offset": 1447372,
+    "n_verts": 216,
+    "i_offset": 1448668,
+    "n_tris": 208,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/Exterior/Tyres",
+    "zone": null,
+    "role": "exterior_wheel",
+    "boundary_role": null,
+    "representation": "illustrative_exterior",
+    "group": "Exterior/Tyres",
+    "decorative": true,
+    "in_cfd_domain": false,
+    "visible": true,
+    "look": "/World/Looks/ExteriorTyre",
+    "source_faces": null,
+    "v_offset": 1449916,
+    "n_verts": 488,
+    "i_offset": 1452844,
+    "n_tris": 800,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/Exterior/Hubs",
+    "zone": null,
+    "role": "exterior_wheel",
+    "boundary_role": null,
+    "representation": "illustrative_exterior",
+    "group": "Exterior/Hubs",
+    "decorative": true,
+    "in_cfd_domain": false,
+    "visible": true,
+    "look": "/World/Looks/ExteriorHub",
+    "source_faces": null,
+    "v_offset": 1457644,
+    "n_verts": 320,
+    "i_offset": 1459564,
+    "n_tris": 160,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/Exterior/Mirrors",
+    "zone": null,
+    "role": "exterior_mirror",
+    "boundary_role": null,
+    "representation": "illustrative_exterior",
+    "group": "Exterior/Mirrors",
+    "decorative": true,
+    "in_cfd_domain": false,
+    "visible": true,
+    "look": "/World/Looks/ExteriorTrim",
+    "source_faces": null,
+    "v_offset": 1460524,
+    "n_verts": 96,
+    "i_offset": 1461100,
+    "n_tris": 144,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/Exterior/RoofUnit",
+    "zone": null,
+    "role": "exterior_roof_unit",
+    "boundary_role": null,
+    "representation": "illustrative_exterior",
+    "group": "Exterior/RoofUnit",
+    "decorative": true,
+    "in_cfd_domain": false,
+    "visible": true,
+    "look": "/World/Looks/ExteriorRoofUnit",
+    "source_faces": null,
+    "v_offset": 1461964,
+    "n_verts": 325,
+    "i_offset": 1463916,
+    "n_tris": 486,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/Exterior/Ground",
+    "zone": null,
+    "role": "exterior_ground",
+    "boundary_role": null,
+    "representation": "illustrative_exterior",
+    "group": "Exterior/Ground",
+    "decorative": true,
+    "in_cfd_domain": false,
+    "visible": true,
+    "look": "/World/Looks/ExteriorGround",
+    "source_faces": null,
+    "v_offset": 1466832,
+    "n_verts": 65,
+    "i_offset": 1467224,
+    "n_tris": 64,
+    "kind": "mesh"
    }
   ],
   "looks": {
@@ -668,67 +1038,241 @@
     "color": "#ff4d4d",
     "opacity_exterior": 1.0,
     "opacity_inside": 1.0,
+    "opacity_cutaway": 1.0,
+    "opacity_xray": 1.0,
+    "opacity_field": 0.6000000238418579,
+    "smooth": false,
     "emissive": null
    },
    "/World/Looks/Skin": {
     "color": "#f2a774",
     "opacity_exterior": 1.0,
     "opacity_inside": 1.0,
+    "opacity_cutaway": 1.0,
+    "opacity_xray": 1.0,
+    "opacity_field": 0.550000011920929,
+    "smooth": false,
     "emissive": null
    },
    "/World/Looks/Seat": {
     "color": "#3f5f99",
     "opacity_exterior": 1.0,
     "opacity_inside": 1.0,
+    "opacity_cutaway": 1.0,
+    "opacity_xray": 1.0,
+    "opacity_field": 0.3499999940395355,
+    "smooth": false,
     "emissive": null
    },
    "/World/Looks/Roof": {
     "color": "#e8eef5",
     "opacity_exterior": 0.9700000286102295,
     "opacity_inside": 0.0,
+    "opacity_cutaway": 0.0,
+    "opacity_xray": 0.0,
+    "opacity_field": 0.0,
+    "smooth": false,
     "emissive": null
    },
    "/World/Looks/BodyPanel": {
     "color": "#dfe7f1",
     "opacity_exterior": 0.9599999785423279,
     "opacity_inside": 0.1599999964237213,
+    "opacity_cutaway": 0.1599999964237213,
+    "opacity_xray": 0.10000000149011612,
+    "opacity_field": 0.05000000074505806,
+    "smooth": false,
     "emissive": null
    },
    "/World/Looks/Door": {
     "color": "#b9c7d8",
     "opacity_exterior": 0.9599999785423279,
     "opacity_inside": 0.2199999988079071,
+    "opacity_cutaway": 0.2199999988079071,
+    "opacity_xray": 0.14000000059604645,
+    "opacity_field": 0.05999999865889549,
+    "smooth": false,
     "emissive": null
    },
    "/World/Looks/Floor": {
     "color": "#4b5563",
     "opacity_exterior": 1.0,
     "opacity_inside": 1.0,
+    "opacity_cutaway": 1.0,
+    "opacity_xray": 1.0,
+    "opacity_field": 0.8500000238418579,
+    "smooth": false,
     "emissive": null
    },
    "/World/Looks/Glass": {
     "color": "#7cc3f5",
     "opacity_exterior": 0.41999998688697815,
     "opacity_inside": 0.14000000059604645,
+    "opacity_cutaway": 0.14000000059604645,
+    "opacity_xray": 0.10000000149011612,
+    "opacity_field": 0.03999999910593033,
+    "smooth": false,
     "emissive": null
    },
    "/World/Looks/SupplyVent": {
     "color": "#22d3ee",
     "opacity_exterior": 1.0,
     "opacity_inside": 1.0,
+    "opacity_cutaway": 1.0,
+    "opacity_xray": 1.0,
+    "opacity_field": 1.0,
+    "smooth": false,
     "emissive": "#0e7490"
    },
    "/World/Looks/LeakSlot": {
     "color": "#facc15",
     "opacity_exterior": 1.0,
     "opacity_inside": 1.0,
+    "opacity_cutaway": 1.0,
+    "opacity_xray": 1.0,
+    "opacity_field": 0.800000011920929,
+    "smooth": false,
     "emissive": "#713f12"
    },
    "/World/Looks/ReturnGrille": {
     "color": "#a78bfa",
     "opacity_exterior": 1.0,
     "opacity_inside": 1.0,
+    "opacity_cutaway": 1.0,
+    "opacity_xray": 1.0,
+    "opacity_field": 1.0,
+    "smooth": false,
     "emissive": "#4c1d95"
+   },
+   "/World/Looks/ExteriorBody": {
+    "color": "#ecf0f5",
+    "opacity_exterior": 1.0,
+    "opacity_inside": 1.0,
+    "opacity_cutaway": 1.0,
+    "opacity_xray": 0.10000000149011612,
+    "opacity_field": 0.03999999910593033,
+    "smooth": true,
+    "emissive": null
+   },
+   "/World/Looks/ExteriorRoof": {
+    "color": "#f6f8fb",
+    "opacity_exterior": 1.0,
+    "opacity_inside": 0.0,
+    "opacity_cutaway": 0.0,
+    "opacity_xray": 0.05999999865889549,
+    "opacity_field": 0.0,
+    "smooth": true,
+    "emissive": null
+   },
+   "/World/Looks/ExteriorGlass": {
+    "color": "#1a273a",
+    "opacity_exterior": 0.7400000095367432,
+    "opacity_inside": 0.0,
+    "opacity_cutaway": 0.0,
+    "opacity_xray": 0.05000000074505806,
+    "opacity_field": 0.0,
+    "smooth": true,
+    "emissive": null
+   },
+   "/World/Looks/ExteriorDoorGlass": {
+    "color": "#22334a",
+    "opacity_exterior": 0.7799999713897705,
+    "opacity_inside": 0.0,
+    "opacity_cutaway": 0.0,
+    "opacity_xray": 0.05999999865889549,
+    "opacity_field": 0.0,
+    "smooth": true,
+    "emissive": null
+   },
+   "/World/Looks/ExteriorTrim": {
+    "color": "#2b333f",
+    "opacity_exterior": 1.0,
+    "opacity_inside": 1.0,
+    "opacity_cutaway": 1.0,
+    "opacity_xray": 0.15000000596046448,
+    "opacity_field": 0.05000000074505806,
+    "smooth": true,
+    "emissive": null
+   },
+   "/World/Looks/ExteriorAccent": {
+    "color": "#b5e61d",
+    "opacity_exterior": 1.0,
+    "opacity_inside": 1.0,
+    "opacity_cutaway": 1.0,
+    "opacity_xray": 0.20000000298023224,
+    "opacity_field": 0.05000000074505806,
+    "smooth": true,
+    "emissive": "#2c3a05"
+   },
+   "/World/Looks/ExteriorLight": {
+    "color": "#f4f7fb",
+    "opacity_exterior": 1.0,
+    "opacity_inside": 1.0,
+    "opacity_cutaway": 1.0,
+    "opacity_xray": 0.20000000298023224,
+    "opacity_field": 0.05000000074505806,
+    "smooth": true,
+    "emissive": "#8a96a6"
+   },
+   "/World/Looks/ExteriorTailLight": {
+    "color": "#d93a3a",
+    "opacity_exterior": 1.0,
+    "opacity_inside": 1.0,
+    "opacity_cutaway": 1.0,
+    "opacity_xray": 0.20000000298023224,
+    "opacity_field": 0.05000000074505806,
+    "smooth": true,
+    "emissive": "#5a1010"
+   },
+   "/World/Looks/ExteriorWheelWell": {
+    "color": "#15181d",
+    "opacity_exterior": 1.0,
+    "opacity_inside": 1.0,
+    "opacity_cutaway": 1.0,
+    "opacity_xray": 0.10000000149011612,
+    "opacity_field": 0.0,
+    "smooth": true,
+    "emissive": null
+   },
+   "/World/Looks/ExteriorTyre": {
+    "color": "#1c1f24",
+    "opacity_exterior": 1.0,
+    "opacity_inside": 1.0,
+    "opacity_cutaway": 1.0,
+    "opacity_xray": 0.550000011920929,
+    "opacity_field": 0.25,
+    "smooth": true,
+    "emissive": null
+   },
+   "/World/Looks/ExteriorHub": {
+    "color": "#b4bcc8",
+    "opacity_exterior": 1.0,
+    "opacity_inside": 1.0,
+    "opacity_cutaway": 1.0,
+    "opacity_xray": 0.550000011920929,
+    "opacity_field": 0.25,
+    "smooth": true,
+    "emissive": null
+   },
+   "/World/Looks/ExteriorRoofUnit": {
+    "color": "#d5dbe3",
+    "opacity_exterior": 1.0,
+    "opacity_inside": 0.0,
+    "opacity_cutaway": 0.0,
+    "opacity_xray": 0.07999999821186066,
+    "opacity_field": 0.0,
+    "smooth": true,
+    "emissive": null
+   },
+   "/World/Looks/ExteriorGround": {
+    "color": "#000000",
+    "opacity_exterior": 0.30000001192092896,
+    "opacity_inside": 0.30000001192092896,
+    "opacity_cutaway": 0.30000001192092896,
+    "opacity_xray": 0.25,
+    "opacity_field": 0.20000000298023224,
+    "smooth": true,
+    "emissive": null
    }
   }
  },
@@ -736,76 +1280,114 @@
   "Default": {
    "path": "/World/Cameras/Default",
    "eye": [
-    -4.36486,
-    8.34419,
-    6.27311
+    -4.33897,
+    8.97253,
+    4.56678
    ],
    "target": [
-    4.30169,
-    0.0175,
-    1.515
+    4.2817,
+    -0.0,
+    1.4
    ],
    "up": [
-    0.26544,
-    -0.25503,
-    0.92979
+    0.17088,
+    -0.17786,
+    0.96911
    ],
    "fov_deg": 36.0
   },
   "Front": {
    "path": "/World/Cameras/Front",
    "eye": [
-    -6.74392,
-    0.0185,
-    1.815
+    -7.15388,
+    0.001,
+    2.45559
    ],
    "target": [
-    4.30169,
-    0.0175,
-    1.515
+    4.2817,
+    0.0,
+    1.4
    ],
    "up": [
-    0.02715,
-    -0.0,
-    0.99963
+    0.09192,
+    -1e-05,
+    0.99577
    ],
    "fov_deg": 36.0
   },
   "Side": {
    "path": "/World/Cameras/Side",
    "eye": [
-    4.30169,
-    11.06311,
-    2.015
+    4.2817,
+    11.43558,
+    2.27966
    ],
    "target": [
-    4.30169,
-    0.0175,
-    1.515
+    4.2817,
+    0.0,
+    1.4
    ],
    "up": [
     0.0,
-    -0.04522,
-    0.99898
+    -0.0767,
+    0.99705
    ],
    "fov_deg": 36.0
   },
   "Top": {
    "path": "/World/Cameras/Top",
    "eye": [
-    4.30169,
-    0.0165,
-    13.8351
+    4.2817,
+    -0.001,
+    14.15507
    ],
    "target": [
-    4.30169,
-    0.0175,
-    1.515
+    4.2817,
+    0.0,
+    1.4
    ],
    "up": [
     0.0,
     1.0,
     8e-05
+   ],
+   "fov_deg": 36.0
+  },
+  "Rear": {
+   "path": "/World/Cameras/Rear",
+   "eye": [
+    13.0783,
+    -8.09287,
+    4.56678
+   ],
+   "target": [
+    4.2817,
+    0.0,
+    1.4
+   ],
+   "up": [
+    -0.18847,
+    0.17339,
+    0.96665
+   ],
+   "fov_deg": 36.0
+  },
+  "Inside": {
+   "path": "/World/Cameras/Inside",
+   "eye": [
+    -1.50407,
+    7.05478,
+    8.90414
+   ],
+   "target": [
+    4.30169,
+    0.0175,
+    1.265
+   ],
+   "up": [
+    0.40856,
+    -0.49522,
+    0.76671
    ],
    "fov_deg": 36.0
   }
@@ -1633,5 +2215,722 @@
   }
  ],
  "probes_recomputed": [],
+ "zones": {
+  "defs": [
+   {
+    "id": "driver",
+    "label": "Driver area",
+    "rule": "cabin front to the end of the driver_area partition; includes the front entrance",
+    "bounds_min": [
+     0.0534,
+     -1.18,
+     0.38
+    ],
+    "bounds_max": [
+     1.3,
+     1.215,
+     2.65
+    ],
+    "landmarks": [
+     "driver_area",
+     "Skin",
+     "door_front"
+    ],
+    "path": "/World/Zones/driver"
+   },
+   {
+    "id": "front",
+    "label": "Front",
+    "rule": "from the driver area to the start of the middle door",
+    "bounds_min": [
+     1.3,
+     -1.18,
+     0.38
+    ],
+    "bounds_max": [
+     3.6505,
+     1.215,
+     2.65
+    ],
+    "landmarks": [
+     "driver_area",
+     "door_middle"
+    ],
+    "path": "/World/Zones/front"
+   },
+   {
+    "id": "middle",
+    "label": "Middle",
+    "rule": "the span of the middle door",
+    "bounds_min": [
+     3.6505,
+     -1.18,
+     0.38
+    ],
+    "bounds_max": [
+     4.8494,
+     1.215,
+     2.65
+    ],
+    "landmarks": [
+     "door_middle"
+    ],
+    "path": "/World/Zones/middle"
+   },
+   {
+    "id": "rear",
+    "label": "Rear",
+    "rule": "behind the middle door to the rear wall (raised rear floor)",
+    "bounds_min": [
+     4.8494,
+     -1.18,
+     0.38
+    ],
+    "bounds_max": [
+     8.55,
+     1.215,
+     2.65
+    ],
+    "landmarks": [
+     "door_middle",
+     "window_rear"
+    ],
+    "path": "/World/Zones/rear"
+   }
+  ],
+  "summary": {
+   "cabin": {
+    "n": 67532,
+    "cfd": {
+     "T": {
+      "mean": 23.951,
+      "p10": 21.495,
+      "p50": 22.99,
+      "p90": 27.974,
+      "min": 18.0,
+      "max": 53.71
+     },
+     "speed": {
+      "mean": 0.236,
+      "p10": 0.0642,
+      "p50": 0.1945,
+      "p90": 0.4382,
+      "min": 0.0007,
+      "max": 4.9507
+     }
+    },
+    "pi": {
+     "T": {
+      "mean": 24.03,
+      "p10": 21.607,
+      "p50": 23.044,
+      "p90": 28.047,
+      "min": 16.615,
+      "max": 86.555
+     },
+     "speed": {
+      "mean": 0.2333,
+      "p10": 0.0744,
+      "p50": 0.194,
+      "p90": 0.4246,
+      "min": 0.0026,
+      "max": 4.7046
+     }
+    },
+    "pn": {
+     "T": {
+      "mean": 24.03,
+      "p10": 21.607,
+      "p50": 23.044,
+      "p90": 28.047,
+      "min": 16.615,
+      "max": 86.555
+     },
+     "speed": {
+      "mean": 0.2333,
+      "p10": 0.0744,
+      "p50": 0.194,
+      "p90": 0.4246,
+      "min": 0.0026,
+      "max": 4.7046
+     }
+    },
+    "vanilla": {
+     "T": {
+      "mean": 23.928,
+      "p10": 21.413,
+      "p50": 22.889,
+      "p90": 28.096,
+      "min": 17.086,
+      "max": 85.681
+     },
+     "speed": {
+      "mean": 0.2279,
+      "p10": 0.0725,
+      "p50": 0.1896,
+      "p90": 0.422,
+      "min": 0.002,
+      "max": 4.461
+     }
+    }
+   },
+   "zones": {
+    "driver": {
+     "n": 9499,
+     "share_of_cabin_samples": 0.1407,
+     "held_out_share": 0.411,
+     "cfd": {
+      "T": {
+       "mean": 24.658,
+       "p10": 22.607,
+       "p50": 23.516,
+       "p90": 29.702,
+       "min": 18.0,
+       "max": 44.943
+      },
+      "speed": {
+       "mean": 0.1566,
+       "p10": 0.0433,
+       "p50": 0.1383,
+       "p90": 0.2612,
+       "min": 0.002,
+       "max": 4.4595
+      }
+     },
+     "pi": {
+      "T": {
+       "mean": 24.803,
+       "p10": 22.573,
+       "p50": 23.666,
+       "p90": 29.414,
+       "min": 16.615,
+       "max": 45.425
+      },
+      "speed": {
+       "mean": 0.1745,
+       "p10": 0.0616,
+       "p50": 0.1557,
+       "p90": 0.2897,
+       "min": 0.0026,
+       "max": 4.5929
+      },
+      "vs_cfd": {
+       "T": {
+        "mean_abs_diff": 0.593,
+        "mean_diff": 0.146
+       },
+       "speed": {
+        "mean_abs_diff": 0.0548,
+        "mean_diff": 0.0179
+       }
+      }
+     },
+     "pn": {
+      "T": {
+       "mean": 24.803,
+       "p10": 22.573,
+       "p50": 23.666,
+       "p90": 29.414,
+       "min": 16.615,
+       "max": 45.425
+      },
+      "speed": {
+       "mean": 0.1745,
+       "p10": 0.0616,
+       "p50": 0.1557,
+       "p90": 0.2897,
+       "min": 0.0026,
+       "max": 4.5929
+      },
+      "vs_cfd": {
+       "T": {
+        "mean_abs_diff": 0.593,
+        "mean_diff": 0.146
+       },
+       "speed": {
+        "mean_abs_diff": 0.0548,
+        "mean_diff": 0.0179
+       }
+      }
+     },
+     "vanilla": {
+      "T": {
+       "mean": 24.652,
+       "p10": 22.289,
+       "p50": 23.432,
+       "p90": 29.217,
+       "min": 17.086,
+       "max": 44.857
+      },
+      "speed": {
+       "mean": 0.1727,
+       "p10": 0.0612,
+       "p50": 0.1527,
+       "p90": 0.2836,
+       "min": 0.002,
+       "max": 4.3741
+      },
+      "vs_cfd": {
+       "T": {
+        "mean_abs_diff": 0.623,
+        "mean_diff": -0.005
+       },
+       "speed": {
+        "mean_abs_diff": 0.0497,
+        "mean_diff": 0.016
+       }
+      }
+     }
+    },
+    "front": {
+     "n": 18024,
+     "share_of_cabin_samples": 0.2669,
+     "held_out_share": 0.329,
+     "cfd": {
+      "T": {
+       "mean": 23.84,
+       "p10": 21.883,
+       "p50": 23.028,
+       "p90": 26.519,
+       "min": 18.0,
+       "max": 50.585
+      },
+      "speed": {
+       "mean": 0.2294,
+       "p10": 0.0716,
+       "p50": 0.1805,
+       "p90": 0.4049,
+       "min": 0.0007,
+       "max": 1.554
+      }
+     },
+     "pi": {
+      "T": {
+       "mean": 23.952,
+       "p10": 21.921,
+       "p50": 23.105,
+       "p90": 26.839,
+       "min": 17.501,
+       "max": 54.494
+      },
+      "speed": {
+       "mean": 0.2208,
+       "p10": 0.0663,
+       "p50": 0.1758,
+       "p90": 0.3982,
+       "min": 0.0044,
+       "max": 1.5375
+      },
+      "vs_cfd": {
+       "T": {
+        "mean_abs_diff": 0.489,
+        "mean_diff": 0.113
+       },
+       "speed": {
+        "mean_abs_diff": 0.0538,
+        "mean_diff": -0.0085
+       }
+      }
+     },
+     "pn": {
+      "T": {
+       "mean": 23.952,
+       "p10": 21.921,
+       "p50": 23.105,
+       "p90": 26.839,
+       "min": 17.501,
+       "max": 54.494
+      },
+      "speed": {
+       "mean": 0.2208,
+       "p10": 0.0663,
+       "p50": 0.1758,
+       "p90": 0.3982,
+       "min": 0.0044,
+       "max": 1.5375
+      },
+      "vs_cfd": {
+       "T": {
+        "mean_abs_diff": 0.489,
+        "mean_diff": 0.113
+       },
+       "speed": {
+        "mean_abs_diff": 0.0538,
+        "mean_diff": -0.0085
+       }
+      }
+     },
+     "vanilla": {
+      "T": {
+       "mean": 23.755,
+       "p10": 21.671,
+       "p50": 22.873,
+       "p90": 26.608,
+       "min": 17.593,
+       "max": 49.295
+      },
+      "speed": {
+       "mean": 0.2228,
+       "p10": 0.0691,
+       "p50": 0.1778,
+       "p90": 0.4145,
+       "min": 0.0039,
+       "max": 1.5552
+      },
+      "vs_cfd": {
+       "T": {
+        "mean_abs_diff": 0.438,
+        "mean_diff": -0.085
+       },
+       "speed": {
+        "mean_abs_diff": 0.0518,
+        "mean_diff": -0.0066
+       }
+      }
+     }
+    },
+    "middle": {
+     "n": 11347,
+     "share_of_cabin_samples": 0.168,
+     "held_out_share": 0.3621,
+     "cfd": {
+      "T": {
+       "mean": 23.483,
+       "p10": 21.42,
+       "p50": 22.482,
+       "p90": 27.432,
+       "min": 18.0,
+       "max": 50.031
+      },
+      "speed": {
+       "mean": 0.289,
+       "p10": 0.0911,
+       "p50": 0.255,
+       "p90": 0.4974,
+       "min": 0.0024,
+       "max": 4.9507
+      }
+     },
+     "pi": {
+      "T": {
+       "mean": 23.457,
+       "p10": 21.461,
+       "p50": 22.448,
+       "p90": 27.317,
+       "min": 17.698,
+       "max": 44.71
+      },
+      "speed": {
+       "mean": 0.293,
+       "p10": 0.1013,
+       "p50": 0.2611,
+       "p90": 0.4898,
+       "min": 0.0047,
+       "max": 4.7046
+      },
+      "vs_cfd": {
+       "T": {
+        "mean_abs_diff": 0.503,
+        "mean_diff": -0.026
+       },
+       "speed": {
+        "mean_abs_diff": 0.0536,
+        "mean_diff": 0.004
+       }
+      }
+     },
+     "pn": {
+      "T": {
+       "mean": 23.457,
+       "p10": 21.461,
+       "p50": 22.448,
+       "p90": 27.317,
+       "min": 17.698,
+       "max": 44.71
+      },
+      "speed": {
+       "mean": 0.293,
+       "p10": 0.1013,
+       "p50": 0.2611,
+       "p90": 0.4898,
+       "min": 0.0047,
+       "max": 4.7046
+      },
+      "vs_cfd": {
+       "T": {
+        "mean_abs_diff": 0.503,
+        "mean_diff": -0.026
+       },
+       "speed": {
+        "mean_abs_diff": 0.0536,
+        "mean_diff": 0.004
+       }
+      }
+     },
+     "vanilla": {
+      "T": {
+       "mean": 23.415,
+       "p10": 21.26,
+       "p50": 22.381,
+       "p90": 27.491,
+       "min": 17.565,
+       "max": 45.234
+      },
+      "speed": {
+       "mean": 0.2846,
+       "p10": 0.0988,
+       "p50": 0.2508,
+       "p90": 0.4857,
+       "min": 0.0054,
+       "max": 4.461
+      },
+      "vs_cfd": {
+       "T": {
+        "mean_abs_diff": 0.49,
+        "mean_diff": -0.068
+       },
+       "speed": {
+        "mean_abs_diff": 0.0505,
+        "mean_diff": -0.0044
+       }
+      }
+     }
+    },
+    "rear": {
+     "n": 28662,
+     "share_of_cabin_samples": 0.4244,
+     "held_out_share": 0.4373,
+     "cfd": {
+      "T": {
+       "mean": 23.973,
+       "p10": 21.267,
+       "p50": 22.861,
+       "p90": 28.259,
+       "min": 18.0,
+       "max": 53.71
+      },
+      "speed": {
+       "mean": 0.2456,
+       "p10": 0.0673,
+       "p50": 0.2081,
+       "p90": 0.4549,
+       "min": 0.0007,
+       "max": 1.4495
+      }
+     },
+     "pi": {
+      "T": {
+       "mean": 24.049,
+       "p10": 21.487,
+       "p50": 22.929,
+       "p90": 28.372,
+       "min": 17.328,
+       "max": 86.555
+      },
+      "speed": {
+       "mean": 0.2371,
+       "p10": 0.079,
+       "p50": 0.2003,
+       "p90": 0.4303,
+       "min": 0.005,
+       "max": 1.6067
+      },
+      "vs_cfd": {
+       "T": {
+        "mean_abs_diff": 0.652,
+        "mean_diff": 0.076
+       },
+       "speed": {
+        "mean_abs_diff": 0.061,
+        "mean_diff": -0.0085
+       }
+      }
+     },
+     "pn": {
+      "T": {
+       "mean": 24.049,
+       "p10": 21.487,
+       "p50": 22.929,
+       "p90": 28.372,
+       "min": 17.328,
+       "max": 86.555
+      },
+      "speed": {
+       "mean": 0.2371,
+       "p10": 0.079,
+       "p50": 0.2003,
+       "p90": 0.4303,
+       "min": 0.005,
+       "max": 1.6067
+      },
+      "vs_cfd": {
+       "T": {
+        "mean_abs_diff": 0.652,
+        "mean_diff": 0.076
+       },
+       "speed": {
+        "mean_abs_diff": 0.061,
+        "mean_diff": -0.0085
+       }
+      }
+     },
+     "vanilla": {
+      "T": {
+       "mean": 24.0,
+       "p10": 21.293,
+       "p50": 22.835,
+       "p90": 28.59,
+       "min": 17.315,
+       "max": 85.681
+      },
+      "speed": {
+       "mean": 0.227,
+       "p10": 0.0723,
+       "p50": 0.1906,
+       "p90": 0.4229,
+       "min": 0.0049,
+       "max": 1.4955
+      },
+      "vs_cfd": {
+       "T": {
+        "mean_abs_diff": 0.659,
+        "mean_diff": 0.027
+       },
+       "speed": {
+        "mean_abs_diff": 0.0596,
+        "mean_diff": -0.0185
+       }
+      }
+     }
+    }
+   },
+   "provenance": {
+    "script": "src/sensora_bus/usd/zones.py (called by export-web)",
+    "sample": "/World/Results/Field (Interior cells, one per 8 cm voxel)",
+    "sample_count": 67532,
+    "ids_sha256": "a8942fdcb7b74d39c321851acfeadca4e60fc6e25027404872eafd15e4b68e36",
+    "zone_masks_sha256": "e43fc7ff9e2919e5f0f50b61d44ccd36b19eda9111af28721b336b5e52f2c64e",
+    "samples_in_no_zone": 0,
+    "weighting": "voxel-weighted: one Interior CFD cell per 8 cm voxel (the web 3D preview sample); approximates volume weighting because CFD cell volumes were not exported",
+    "box_rule": "lo <= p < hi on every axis (hi inclusive at the cabin's far end); Interior samples only",
+    "values": "read from each source's USD payload in source precision; nothing is interpolated",
+    "note": "descriptive statistics only; not a comfort score, health indicator or validated KPI"
+   }
+  }
+ },
+ "exterior": {
+  "path": "/World/Bus/Exterior",
+  "representation": "illustrative_exterior",
+  "in_cfd_domain": false,
+  "source": "procedural illustrative shell (no exterior CAD available); src/sensora_bus/usd/exterior.py",
+  "alignment": {
+   "status": "approximate",
+   "method": "generated in the CFD frame from cabin landmarks; transform = identity, no scaling",
+   "landmarks": [
+    "cabin length/width/height (wall_side, ceiling)",
+    "front windscreen (windshield)",
+    "rear window (window_rear)",
+    "doors on +Y (door_front, door_middle)",
+    "wheel-arch housings (wheel_arch) -> wheel x positions",
+    "floor levels (floor) -> low-floor bus, ground assumed at z = 0"
+   ],
+   "ground_z_m": 0.0,
+   "matrix_row_major": [
+    [
+     1.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     1.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     1.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ]
+   ]
+  },
+  "references": [
+   "../assets/exterior_illustrative.usdc"
+  ]
+ },
+ "proposed_sensors": [
+  {
+   "id": "driver",
+   "label": "Proposed sensor location: driver area",
+   "position": [
+    0.95,
+    -0.45,
+    2.45
+   ],
+   "status": "proposed_illustrative",
+   "is_sensor": false,
+   "has_readings": false,
+   "zone": [
+    "driver"
+   ],
+   "visible": true
+  },
+  {
+   "id": "front",
+   "label": "Proposed sensor location: front",
+   "position": [
+    2.0,
+    0.0,
+    2.55
+   ],
+   "status": "proposed_illustrative",
+   "is_sensor": false,
+   "has_readings": false,
+   "zone": [
+    "front"
+   ],
+   "visible": true
+  },
+  {
+   "id": "middle",
+   "label": "Proposed sensor location: middle",
+   "position": [
+    4.25,
+    0.0,
+    2.55
+   ],
+   "status": "proposed_illustrative",
+   "is_sensor": false,
+   "has_readings": false,
+   "zone": [
+    "middle"
+   ],
+   "visible": true
+  },
+  {
+   "id": "rear",
+   "label": "Proposed sensor location: rear",
+   "position": [
+    7.0,
+    0.0,
+    2.55
+   ],
+   "status": "proposed_illustrative",
+   "is_sensor": false,
+   "has_readings": false,
+   "zone": [
+    "rear"
+   ],
+   "visible": true
+  }
+ ],
  "preview_package": "usd/bus_scene_preview.usdz"
 }

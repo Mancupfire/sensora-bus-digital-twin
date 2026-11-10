@@ -1,10 +1,12 @@
-// "Explore" — the default, non-specialist view: a large 3D bus, a coloured slice of the stored CFD field,
-// simple controls, a location readout, and an optional panel comparing the AI predictions.
-// Every value comes from data/ (stored CFD values or stored model predictions); nothing is computed live
-// except colours, arrows and the nearest-cell lookup.
+// "Explore cabin" — the 3D bus (CFD cabin + illustrative exterior from the USD export), a coloured slice of the
+// stored field, zone summaries with an illustrative operator review, a location readout, and (advanced) data
+// source, slice and AI-comparison controls.  The same 3D stage is also mounted in the Overview hero / tour.
+// Every value comes from data/ (stored CFD values, stored model predictions, or zone statistics derived by
+// export-web); nothing is computed live except colours, arrows and the nearest-cell lookup.
 import { sliceData, sliceField, bin, dequantXYZ, sourceAvailable, getScene, sceneBin } from './data.js';
 import { colorOf, drawColorbar, fmt, mapFor } from './colormap.js';
 import { sliceImage, SlicePanel } from './slice2d.js';
+import { zoneObs, observationText, SRC_NAME, RULES, getList, addToList, removeFromList, setList } from './review.js';
 
 const $ = (s) => document.querySelector(s);
 const MODELS = ['vanilla', 'pn', 'pi'];
@@ -17,11 +19,14 @@ const FLOOR_Z = 0.38; // front-section cabin floor in the CFD frame (raised rear
 const DEFAULT_POS = { horizontal: 1.4, longitudinal: -0.1, transverse: 4.25 };
 // screen-space nudges for labels so they sit outside the body: [dx, dy] added to the outward direction
 const LABEL_BIAS = { driver: [-0.3, -1], front_door: [-0.2, 1], middle_door: [0, 1], rear: [1, -0.3], air_vents: [0.2, -1] };
+const INSIDE = ['cutaway', 'xray', 'field'];
+const LOOK_ALIAS = { inside: 'cutaway' };
 
 export function initExplore({ M, MET }) {
-  const E = { v: 'T', look: 'exterior', started: false, orient: 'horizontal', idx: {}, probe: null, src: 'cfd',
-    labels: true, arrows: false, arrowsTouched: false, compare: false,
-    layers: { body: true, floor: true, cabin_shell: true, seats: true, occupants: true, hvac: true, slice: true, arrows: true }, saved: null };
+  const E = { v: 'T', look: 'cutaway', insideStyle: 'cutaway', orient: 'horizontal', idx: {}, probe: null, src: 'cfd',
+    labels: true, arrows: false, arrowsTouched: false, compare: false, zone: null, sensors: false, ctx: 'explore', sliceOn: true,
+    layers: { body: true, floor: true, cabin_shell: true, seats: true, occupants: true, hvac: true, slice: true, arrows: true, exterior: true, zone: true, sensors: true }, saved: null };
+  Object.defineProperty(E, 'started', { get: () => E.look !== 'exterior' && E.sliceOn });
   const sens = window.__sensora; sens.E = E; sens.exRenders = 0;
   { const t = document.createElement('canvas'); E.noGL = !(t.getContext('webgl2') || t.getContext('webgl')); sens.exNoGL = E.noGL;
     if (E.noGL) document.querySelector('#stage').classList.add('nogl'); }
@@ -44,6 +49,14 @@ export function initExplore({ M, MET }) {
   if (SC && SOURCES.includes(SC.results.authored_selection) && avail(SC.results.authored_selection)) E.src = SC.results.authored_selection;
   E.defaultSrc = E.src;
   const short = (s) => ({ cfd: 'CFD reference', vanilla: 'Vanilla DeepONet', pn: 'PN-DeepONet', pi: 'PI-PN-DeepONet' }[s]);
+  const srcShort = (s) => (s === 'cfd' ? 'CFD reference' : `AI reconstruction: ${short(s)}`);
+  const ZONES = SC && SC.zones ? SC.zones.defs : [];
+  const SENSORS = SC && SC.proposed_sensors ? SC.proposed_sensors.filter((p) => p.visible !== false) : [];
+  { // zone chips come from the USD zones (/World/Zones), not from a hard-coded list
+    const zl = $('#zone-list');
+    if (zl) for (const z of ZONES) { const b = document.createElement('button'); b.type = 'button'; b.className = 'zchip'; b.dataset.zone = z.id; b.textContent = z.label; b.setAttribute('aria-pressed', 'false'); zl.append(b); }
+    if (zl && !ZONES.length) zl.innerHTML = '<span class="small muted">Not available in this build.</span>';
+  }
 
   // ---------------------------------------------------------------- words for places
   function along(x) {
@@ -68,14 +81,21 @@ export function initExplore({ M, MET }) {
   // ---------------------------------------------------------------- controls
   document.querySelectorAll('[data-var]').forEach((b) => b.addEventListener('click', () => {
     E.v = b.dataset.var; if (E.v === 'speed' && !E.arrowsTouched) E.arrows = true; if (E.v === 'T' && !E.arrowsTouched) E.arrows = false;
-    start(); sync(); draw();
+    if (E.look === 'exterior') setLook(E.insideStyle, true); sync(); draw();
   }));
   document.querySelectorAll('[data-look]').forEach((b) => b.addEventListener('click', () => {
-    E.look = b.dataset.look; E._lookChosen = true; if (E.look === 'inside') start(); sync(); if (viewer) viewer.setLook(E.look); draw();
+    setLook(b.dataset.look === 'exterior' ? 'exterior' : E.insideStyle, true); sync(); draw();
   }));
-  $('#btn-inside').addEventListener('click', () => { E.look = 'inside'; start(); sync(); if (viewer) viewer.setLook('inside'); draw(); $('#stage3d').focus({ preventScroll: true }); });
-  $('#ex-orient').addEventListener('change', (e) => { E.orient = e.target.value; E.probe = null; start(); sync(); draw(); });
-  $('#ex-pos').addEventListener('input', (e) => { E.idx[E.orient] = +e.target.value; E.probe = null; start(); sync(); draw(); });
+  document.querySelectorAll('[data-style]').forEach((b) => b.addEventListener('click', () => {
+    E.insideStyle = b.dataset.style; setLook(E.insideStyle, false); sync(); draw();
+  }));
+  document.querySelectorAll('[data-zone]').forEach((b) => b.addEventListener('click', () => {
+    setZone(E.zone === b.dataset.zone ? null : b.dataset.zone, true); sync(); draw();
+  }));
+  document.querySelectorAll('[data-src]').forEach((b) => b.addEventListener('click', () => { if (b.disabled || !avail(b.dataset.src)) return; E.src = b.dataset.src; sync(); draw(); }));
+  $('#ex-sensors').addEventListener('change', (e) => { E.sensors = e.target.checked; applySensors(); });
+  $('#ex-orient').addEventListener('change', (e) => { E.orient = e.target.value; E.probe = null; ensureInside(); sync(); draw(); });
+  $('#ex-pos').addEventListener('input', (e) => { E.idx[E.orient] = +e.target.value; E.probe = null; ensureInside(); sync(); draw(); });
   $('#ex-labels').addEventListener('change', (e) => { E.labels = e.target.checked; placeLabels(); });
   $('#ex-arrows').addEventListener('change', (e) => { E.arrows = e.target.checked; E.arrowsTouched = true; draw(); });
   document.querySelectorAll('[data-exlayer]').forEach((c) => c.addEventListener('change', () => {
@@ -83,9 +103,11 @@ export function initExplore({ M, MET }) {
     if (c.dataset.exlayer === 'slice') { viewer && viewer.setLayerVisible('arrows', c.checked); }
   }));
   document.querySelectorAll('[data-cam]').forEach((b) => b.addEventListener('click', () => {
-    if (!viewer) return; if (b.dataset.cam === 'reset') viewer.resetCamera(); else viewer.setView(b.dataset.cam);
+    if (!viewer) return; viewer.setAutoRotate(false);
+    if (b.dataset.cam === 'reset') viewer.setView(defaultCam(), true); else viewer.setView(b.dataset.cam, true);
     sens.exCam = b.dataset.cam;
   }));
+  $('#btn-reset-view').addEventListener('click', () => { if (viewer) { viewer.setAutoRotate(false); viewer.setView(defaultCam(), true); } sens.exCam = 'reset'; });
   $('#btn-compare').addEventListener('click', () => { setCompare(!E.compare); });
   $('#btn-compare-close').addEventListener('click', () => setCompare(false));
   $('#stage3d').addEventListener('keydown', (e) => {
@@ -96,13 +118,25 @@ export function initExplore({ M, MET }) {
     else if (e.key === 'Enter') { e.preventDefault(); setProbe(c); }
   });
 
-  function start() {
-    if (E.started) return; E.started = true; E.look = E.look === 'exterior' && !E._lookChosen ? 'inside' : E.look;
-    $('#intro').classList.add('done'); if (viewer) { viewer.setLook(E.look); viewer.setLayerVisible('slice', E.layers.slice); }
+  const defaultCam = () => (E.look === 'exterior' ? 'reset' : 'Inside');
+  function ensureInside() { if (E.look === 'exterior') setLook(E.insideStyle, true); E.sliceOn = true; }
+  function start() { ensureInside(); }
+  function setLook(look, moveCam) {
+    look = LOOK_ALIAS[look] || look; const was = E.look; E.look = look; if (INSIDE.includes(look)) E.insideStyle = look;
+    if (viewer) { viewer.setLook(look); if (moveCam && (was === 'exterior') !== (look === 'exterior')) { viewer.setAutoRotate(false); viewer.setView(look === 'exterior' ? 'reset' : 'Inside', true); } }
   }
+  function setZone(id, frame) {
+    E.zone = ZONES.some((z) => z.id === id) ? id : null; const z = ZONES.find((d) => d.id === E.zone);
+    if (viewer) {
+      viewer.setZone(z ? z.bounds_min : null, z ? z.bounds_max : null);
+      if (z && frame) { viewer.setAutoRotate(false); if (E.look === 'exterior') setLook(E.insideStyle, false); viewer.frameBox(z.bounds_min, z.bounds_max, true, 1.15); }
+    }
+    buildLabels(); renderZone();
+  }
+  function applySensors() { if (viewer) viewer.setSensors(E.sensors ? SENSORS.map((p) => p.position) : null); buildLabels(); const c = $('#ex-sensors'); if (c) c.checked = E.sensors; }
   function setCompare(on) {
     E.compare = on; $('#compare').hidden = !on; $('#btn-compare').setAttribute('aria-expanded', String(on));
-    $('#btn-compare').textContent = on ? 'Hide AI comparison' : 'Compare AI predictions';
+    $('#btn-compare').textContent = on ? 'Hide AI comparison' : 'Compare AI reconstructions';
     if (!on && E.src !== E.defaultSrc) { E.src = E.defaultSrc; }
     if (on) start();
     syncSaved(); sync(); draw().then(() => { if (on) $('#compare').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' }); });
@@ -110,33 +144,39 @@ export function initExplore({ M, MET }) {
 
   function sync() {
     document.querySelectorAll('[data-var]').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.var === E.v)));
-    document.querySelectorAll('[data-look]').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.look === E.look)));
+    document.querySelectorAll('[data-look]').forEach((b) => b.setAttribute('aria-checked', String((b.dataset.look === 'exterior') === (E.look === 'exterior'))));
+    document.querySelectorAll('[data-style]').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.style === E.look)));
+    $('#style-row').hidden = E.look === 'exterior';
+    document.querySelectorAll('[data-zone]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.zone === E.zone)));
+    document.querySelectorAll('[data-src]').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.src === E.src)));
+    $('#src-chip').textContent = srcShort(E.src); $('#src-chip').classList.toggle('ai', E.src !== 'cfd');
     $('#ex-orient').value = E.orient;
     const l = slicesOf(E.orient); const p = $('#ex-pos'); p.max = String(l.length - 1); p.value = String(Math.min(E.idx[E.orient], l.length - 1));
     const sl = cur(); $('#ex-pos-lbl').textContent = POS_LBL[E.orient]; $('#ex-pos-out').textContent = posText(sl);
     p.setAttribute('aria-valuetext', posText(sl));
     $('#ex-arrows').checked = E.arrows;
-    $('#intro').classList.toggle('done', E.started); applyShift();
-    const showing = E.src === 'cfd' ? 'CFD simulation' : `${short(E.src)} prediction`;
-    $('#ex-title').textContent = E.started ? `${VAR[E.v].name} · ${showing}` : '';
-    document.querySelectorAll('.cmp-src button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.src === E.src)));
+    applyShift();
+    $('#ex-title').textContent = E.started ? `${VAR[E.v].name} · ${srcShort(E.src)}` : '';
+    document.querySelectorAll('.cmp-src button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.cmpsrc === E.src)));
   }
   function writeHash() {
-    if (!active) return;
+    if (!active || E.ctx !== 'explore') return;
     const q = new URLSearchParams({ var: E.v, look: E.look, cut: E.orient, pos: String(E.idx[E.orient]) });
-    if (E.src !== E.defaultSrc) q.set('src', E.src); if (E.compare) q.set('compare', '1'); if (!E.started) q.set('intro', '1');
-    if (E.saved) q.set('saved', E.saved);
+    if (E.src !== E.defaultSrc) q.set('src', E.src); if (E.compare) q.set('compare', '1');
+    if (E.saved) q.set('saved', E.saved); if (E.zone) q.set('zone', E.zone); if (E.sensors) q.set('sensors', '1');
     history.replaceState(null, '', `#explore?${q}`);
   }
   function readQuery(q) {
     if (VAR[q.get('var')]) E.v = q.get('var');
-    if (['inside', 'exterior'].includes(q.get('look'))) { E.look = q.get('look'); E._lookChosen = true; }
+    const lk = LOOK_ALIAS[q.get('look')] || q.get('look');
+    if (lk === 'exterior' || INSIDE.includes(lk)) { E.look = lk; if (INSIDE.includes(lk)) E.insideStyle = lk; E._queryLook = true; }
+    if (ZONES.some((z) => z.id === q.get('zone'))) E.zone = q.get('zone');
+    if (q.get('sensors') === '1') { E.sensors = true; E._querySensors = true; }
     if (slicesOf(q.get('cut') || '').length) E.orient = q.get('cut');
     if (q.has('pos')) E.idx[E.orient] = Math.max(0, Math.min(slicesOf(E.orient).length - 1, +q.get('pos') || 0));
     if (SOURCES.includes(q.get('src'))) E.src = q.get('src');
     if (q.get('compare') === '1') E.compare = true;
     if (q.get('saved') && SC && SC.probes.some((p) => p.id === q.get('saved'))) E.saved = q.get('saved');
-    if (!q.has('intro') && (q.has('look') || q.has('var'))) E.started = true;
     if (E.v === 'speed') E.arrows = true;
   }
 
@@ -152,7 +192,7 @@ export function initExplore({ M, MET }) {
         throw new Error('the 3D view needs WebGL, which is turned off or unavailable in this browser. The slice maps under "Compare AI predictions" and the Technical details still work');
       }
       const { Viewer3D } = await import('./viewer3d.js');
-      const v = new Viewer3D($('#stage3d'), M, { initialView: 'oblique', background: 0x0d1a33 });
+      const v = new Viewer3D($('#stage3d'), M, { initialView: 'oblique', background: 0x0c1830 });
       v.layers = { ...E.layers, slice: E.started && E.layers.slice };
       v.look = E.look;
       try {
@@ -160,7 +200,7 @@ export function initExplore({ M, MET }) {
           v.setCameras(SC.cameras, SC.default_camera);
           v.addSceneGeometry(await sceneBin(SC.geometry.file), SC);
           // USD visibility sets the DEFAULT of each toggle: a group hidden in the presentation layer starts unchecked
-          for (const layer of ['body', 'seats', 'occupants', 'hvac']) {
+          for (const layer of ['body', 'seats', 'occupants', 'hvac', 'exterior']) {
             const ms = v.meshes.filter((m) => m.userData.layer === layer);
             if (ms.length && ms.every((m) => m.userData.usdHidden)) {
               ms.forEach((m) => { m.userData.usdHidden = false; }); E.layers[layer] = false; v.layers[layer] = false;
@@ -171,7 +211,10 @@ export function initExplore({ M, MET }) {
       } catch (e) { building = null; v.renderer.domElement.remove(); throw new Error(`could not load the bus geometry (${e.message}). Check the connection and reload the page`); }
       v.onProbe = (p) => { if (p.kind === 'slice') { E.saved = null; syncSaved(); setProbe({ q: p.q, r: p.r }); } };
       v.onRender = placeLabels;
-      viewer = v; sens.exViewer = v; buildLabels(); v.setLook(E.look); applyShift(); v.resetCamera();
+      v.onUserStop = () => { sens.autoRotateStoppedByUser = true; };
+      viewer = v; sens.exViewer = v; v.setLook(E.look); applyShift();
+      v.setView(E.ctx === 'overview' || E.look === 'exterior' ? 'reset' : 'Inside', false);
+      if (E.zone) setZone(E.zone, false); applySensors(); buildLabels();
       status('');
       return v;
     })();
@@ -182,21 +225,25 @@ export function initExplore({ M, MET }) {
   let labelEls = [];
   function buildLabels() {
     const host = $('#labels'); host.innerHTML = ''; labelEls = [];
-    for (const lm of (SC ? SC.labels.filter((l) => l.visible) : (M.landmarks || []))) {
+    const items = (SC ? SC.labels.filter((l) => l.visible) : (M.landmarks || [])).map((l) => ({ ...l }));
+    const z = ZONES.find((d) => d.id === E.zone);
+    if (z) items.push({ id: `zone_${z.id}`, label: z.label, anchor: [(z.bounds_min[0] + z.bounds_max[0]) / 2, 0, z.bounds_max[2]], cls: 'zone' });
+    if (E.sensors) for (const p of SENSORS) items.push({ id: `sensor_${p.id}`, label: 'Proposed sensor location', anchor: p.position, cls: 'sensor' });
+    for (const lm of items) {
       const dot = document.createElement('span'); dot.className = 'lm-dot';
       const line = document.createElement('span'); line.className = 'lm-line';
-      const txt = document.createElement('span'); txt.className = 'lm-text'; txt.textContent = lm.label; txt.dataset.lm = lm.id;
+      const txt = document.createElement('span'); txt.className = `lm-text${lm.cls ? ` ${lm.cls}` : ''}`; txt.textContent = lm.label; txt.dataset.lm = lm.id;
       host.append(line, dot, txt); labelEls.push({ lm, dot, line, txt });
     }
   }
   function placeLabels() {
     if (!viewer) return;
-    const host = $('#labels'); host.hidden = !E.labels; if (!E.labels) return;
+    const host = $('#labels'); const any = E.labels || E.zone || E.sensors; host.hidden = !any; if (!any) return;
     const W = host.clientWidth, H = host.clientHeight; const c = viewer.project(viewer.center.toArray());
     const boxes = [];
     for (const { lm, dot, line, txt } of labelEls) {
-      const a = viewer.project(lm.anchor);
-      const vis = a && c && a[0] > -20 && a[0] < W + 20 && a[1] > -20 && a[1] < H + 20;
+      const a = (E.labels || lm.cls) ? viewer.project(lm.anchor) : null;
+      const vis = !!a && c && a[0] > -20 && a[0] < W + 20 && a[1] > -20 && a[1] < H + 20;
       for (const el of [dot, line, txt]) el.style.display = vis ? '' : 'none';
       if (!vis) continue;
       let dx = a[0] - c[0], dy = a[1] - c[1]; const n = Math.hypot(dx, dy) || 1; dx /= n; dy /= n;
@@ -219,15 +266,17 @@ export function initExplore({ M, MET }) {
   function range() { const v = M.variables[E.v]; return v.display_volume || v.display; }
   function applyShift() {
     if (!viewer) return; const w = $('#stage').clientWidth;
-    if (E.started) viewer.setShift(0, 0); else if (w > 900) viewer.setShift(0.11, 0); else if (w < 760) viewer.setShift(0, 0.17); else viewer.setShift(0, 0);
+    viewer.distScale = E.ctx === 'overview' && w > 900 ? 1.42 : 1;
+    if (E.ctx !== 'overview' || w <= 900) viewer.setShift(0, 0); else viewer.setShift(0.15, 0.02);
   }
   async function draw() {
     if (!active) return;
     const my = ++token; sync(); writeHash();
-    if (E.noGL) { status('3D view unavailable: WebGL is turned off in this browser. Use “Compare AI predictions” for slice maps.'); if (E.compare && E.started) { const sl = cur(); await renderCompare(sl, await sliceData(sl.id)); } sens.exRenders++; return; }
+    if (E.noGL) { renderZone(); status('3D view unavailable: WebGL is turned off in this browser. Use “Compare AI predictions” for slice maps.'); if (E.compare && E.started) { const sl = cur(); await renderCompare(sl, await sliceData(sl.id)); } sens.exRenders++; return; }
     try {
       await ensureViewer();
-      if (!E.started) { viewer.setLayerVisible('slice', false); viewer.setArrows(null); viewer.setProbeMarker(null); renderLegend(); renderLocation(null); sens.exRenders++; return; }
+      renderZone();
+      if (!E.started) { viewer.setLayerVisible('slice', false); viewer.setArrows(null); viewer.setProbeMarker(null); renderLegend(); renderLocation(null); status(''); sens.exRenders++; return; }
       const sl = cur();
       if (E.src !== 'cfd' && !avail(E.src)) throw new Error(`${short(E.src)} is unavailable; no other field is substituted`);
       status(`Loading ${VAR[E.v].name.toLowerCase()}…`);
@@ -272,7 +321,7 @@ export function initExplore({ M, MET }) {
     const L = $('#ex-legend');
     if (!E.started) { L.hidden = true; return; } L.hidden = false;
     const V = VAR[E.v]; const [lo, hi] = range(); const c = document.createElement('canvas'); drawColorbar(c, mapFor(E.v, 'cfd'));
-    const showing = E.src === 'cfd' ? 'CFD simulation' : `${short(E.src)} (AI prediction)`;
+    const showing = srcShort(E.src);
     L.innerHTML = `<div class="lg-title">${V.name} <span class="muted">(${V.unit})</span></div>`;
     const bar = document.createElement('div'); bar.className = 'lg-bar'; bar.append(c);
     const ticks = document.createElement('div'); ticks.className = 'lg-ticks';
@@ -300,7 +349,7 @@ export function initExplore({ M, MET }) {
     if (!sl || !E.probe) {
       if (viewer) viewer.setProbeMarker(null);
       if (E.noGL) { box.innerHTML = '<p class="muted">The 3D view is unavailable in this browser. Open “Compare AI predictions” and click a slice map to inspect a location.</p>'; sens.exProbe = null; return; }
-      box.innerHTML = `<p class="muted">${E.started ? 'Click inside the coloured slice to see the temperature and airflow at that spot.' : 'Press “Explore inside”, then click the coloured slice to inspect a location.'}</p>`;
+      box.innerHTML = `<p class="muted">${E.started ? 'Click inside the coloured slice to see the temperature and airflow at that spot.' : 'Choose “Look inside”, then click the coloured slice to inspect a location.'}</p>`;
       sens.exProbe = null; return;
     }
     sd = sd || await sliceData(sl.id);
@@ -321,7 +370,7 @@ export function initExplore({ M, MET }) {
       <div class="loc-where"><div class="k">Where</div><div class="v">${where}</div><div class="small muted">x ${x.toFixed(2)} m · y ${y.toFixed(2)} m · z ${z.toFixed(2)} m</div></div>
       <div class="loc-val"><div class="k">Temperature</div><div class="big">${v.T.toFixed(1)} <span>°C</span></div></div>
       <div class="loc-val"><div class="k">Airflow speed</div><div class="big">${v.speed.toFixed(2)} <span>m/s</span></div></div>
-      <div class="loc-src"><div class="k">Source</div><div class="v">${s === 'cfd' ? 'CFD simulation (reference values)' : `${srcLabel(s)} — AI prediction`}</div>
+      <div class="loc-src"><div class="k">Source</div><div class="v">${SRC_NAME[s]}</div>
         <div class="small"><b>Estimated at this location</b>: value of the nearest simulated cell, ${(p.dist * 100).toFixed(1)} cm from this point (no interpolation). Precomputed; not a sensor reading.</div></div>
     </div>${cmpRows}`;
   }
@@ -337,7 +386,7 @@ export function initExplore({ M, MET }) {
       $('#saved-wrap').hidden = false;
       for (const p of probes) {
         const b = document.createElement('button'); b.type = 'button'; b.dataset.probe = p.id; b.textContent = p.label; b.setAttribute('aria-pressed', 'false');
-        b.addEventListener('click', () => { E.saved = p.id; E.probe = null; start(); syncSaved(); draw(); });
+        b.addEventListener('click', () => { E.saved = p.id; E.probe = null; ensureInside(); syncSaved(); draw(); });
         $('#saved-list').append(b);
       }
     }
@@ -358,7 +407,7 @@ export function initExplore({ M, MET }) {
     box.innerHTML = `<div class="loc-grid">${head}
       <div class="loc-val"><div class="k">Temperature</div><div class="big">${v ? v.T.toFixed(1) : '—'} <span>°C</span></div></div>
       <div class="loc-val"><div class="k">Airflow speed</div><div class="big">${v ? v.speed.toFixed(2) : '—'} <span>m/s</span></div></div>
-      <div class="loc-src"><div class="k">Source</div><div class="v">${s === 'cfd' ? 'CFD simulation (reference values)' : `${srcLabel(s)} — AI prediction`}</div>
+      <div class="loc-src"><div class="k">Source</div><div class="v">${SRC_NAME[s]}</div>
         <div class="small"><b>Estimated at this location</b>: value of the nearest simulated cell, ${(p.distance_m * 100).toFixed(1)} cm from this point (no interpolation). Precomputed; not a sensor reading.</div></div>
     </div>${cmpRows}`;
   }
@@ -367,11 +416,16 @@ export function initExplore({ M, MET }) {
   const srcBox = $('#cmp-src');
   srcBox.innerHTML = '<span class="small muted">Show on the 3D slice:</span>';
   for (const s of SOURCES) {
-    const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'radio'); b.dataset.src = s;
+    const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'radio'); b.dataset.cmpsrc = s;
     const ok = s === 'cfd' || avail(s); b.textContent = short(s) + (ok ? '' : ' (unavailable)');
     if (!ok) { b.disabled = true; b.title = `${short(s)}: ${M.models[s].status.replace('_', ' ')}. No other model is substituted.`; }
     b.addEventListener('click', () => { if (!ok) return; E.src = s; sync(); draw(); });
     srcBox.append(b);
+  }
+  // advanced source selector (same semantics as the comparison panel's)
+  for (const b of document.querySelectorAll('#adv-src [data-src]')) {
+    const s = b.dataset.src; const ok = s === 'cfd' || avail(s);
+    if (!ok) { b.disabled = true; b.textContent += ' (unavailable)'; b.title = `${short(s)}: ${M.models[s].status.replace('_', ' ')}. No other model is substituted.`; }
   }
   function testRMSE(model, v) {
     const r = MET.rows.find((x) => x.model === model && x.split === 'test' && x.region === 'interior' && x.var === v);
@@ -430,13 +484,81 @@ export function initExplore({ M, MET }) {
     const a = artefact;
     box.hidden = false;
     box.innerHTML = `<b>Known model error, shown as is.</b> PN-DeepONet${avail('pi') && (MET.selection?.pi?.selected_is_initial) ? ' (and therefore PI-PN)' : ''} predicts a warm patch near the ceiling about 2.4–3.3 m from the front, at z = ${a.sl.value.toFixed(2)} m, that the CFD does not show: up to ${fmtS(a.mx, 1)} °C on this slice. ${a.held} of the ${a.n} slice cells there with an error above 2 °C lie in regions hidden from training. <button type="button" class="btn small-btn" id="btn-artefact">Show this slice with PN</button>`;
-    $('#btn-artefact').addEventListener('click', () => { E.orient = 'horizontal'; E.idx.horizontal = a.idx; E.v = 'T'; E.src = 'pn'; E.probe = null; sync(); draw().then(() => $('#stage').scrollIntoView({ block: 'start' })); });
+    $('#btn-artefact').addEventListener('click', () => { E.orient = 'horizontal'; E.idx.horizontal = a.idx; E.v = 'T'; E.src = 'pn'; E.probe = null; ensureInside(); sync(); draw().then(() => $('#stage').scrollIntoView({ block: 'start' })); });
+  }
+
+  // ---------------------------------------------------------------- zone review (illustrative operator workflow)
+  function renderZone() {
+    const box = $('#zone-body'); if (!box) return;
+    const list = getList(); renderList(list);
+    if (!ZONES.length) { box.innerHTML = '<p class="muted">Zone summaries are not available in this build.</p>'; return; }
+    if (!E.zone) { box.innerHTML = '<p class="muted">Choose a zone (Driver area, Front, Middle or Rear) to see its summary and a suggested check.</p>'; sens.exZone = null; return; }
+    const o = zoneObs(SC, E.zone, E.src); sens.exZone = o;
+    if (!o) { box.innerHTML = `<p class="muted">No zone summary for ${srcShort(E.src)}.</p>`; return; }
+    const ai = E.src !== 'cfd';
+    const checks = o.checks.length ? o.checks : [RULES.checks.none];
+    const inList = list.some((x) => x.zone === o.id && x.src === E.src);
+    box.innerHTML = `<div class="zr-head"><h3>${o.label}</h3><span class="pill illus">${RULES.status}</span></div>
+      <p class="zr-src">Data: <b>${SRC_NAME[E.src]}</b>${ai ? '' : ' · one simulated scenario'}</p>
+      <div class="zr-grid">
+        <div><div class="k">Observation</div><p>${observationText(o)}</p>
+          <p class="small muted">80 % of this zone lies between ${o.T.p10.toFixed(1)} and ${o.T.p90.toFixed(1)} °C. Summary over ${o.n.toLocaleString('en-US')} samples (one per 8 cm cube of cabin air).</p>
+          ${ai && o.vsCfd ? `<p class="callout small">AI reconstruction: compare with the CFD reference before acting. In this zone it differs from the CFD by ${o.vsCfd.T.mean_abs_diff.toFixed(2)} °C and ${o.vsCfd.speed.mean_abs_diff.toFixed(2)} m/s on average (absolute difference).</p>` : ''}</div>
+        <div><div class="k">Suggested check</div><ul class="checks">${checks.map((c) => `<li>${c}</li>`).join('')}</ul>
+          <details class="small"><summary>How these suggestions are made</summary><p>${RULES.explain} Zone limits: ${o.rule}.</p></details></div>
+      </div>
+      <div class="zr-actions"><button type="button" class="btn" id="btn-add-review" ${inList ? 'disabled' : ''}>${inList ? 'Added to demo review list' : 'Add to demo review list'}</button>
+        <span class="small muted">${RULES.listNote}</span></div>`;
+    $('#btn-add-review').addEventListener('click', () => {
+      addToList({ zone: o.id, label: o.label, src: E.src, srcName: SRC_NAME[E.src], obs: observationText(o), checks, at: new Date().toISOString().slice(11, 16) });
+      renderZone();
+    });
+  }
+  function renderList(list) {
+    const host = $('#review-list'); if (!host) return;
+    host.hidden = !list.length;
+    host.innerHTML = list.length ? `<div class="rl-head"><b>Demo review list</b> <span class="small muted">(${list.length}; this browser tab only)</span> <button type="button" class="btn ghost small-btn" id="rl-clear">Clear</button></div>
+      <ol>${list.map((x, i) => `<li><b>${x.label}</b> · <span class="muted">${x.srcName}</span><br>${x.checks.join(' ')} <button type="button" class="btn ghost small-btn" data-rl="${i}" aria-label="Remove ${x.label} from the review list">Remove</button></li>`).join('')}</ol>` : '';
+    host.querySelectorAll('[data-rl]').forEach((b) => b.addEventListener('click', () => { removeFromList(+b.dataset.rl); renderZone(); }));
+    const c = host.querySelector('#rl-clear'); if (c) c.addEventListener('click', () => { setList([]); renderZone(); });
   }
 
   return {
-    show() { active = true; if (E.compare) { $('#compare').hidden = false; $('#btn-compare').setAttribute('aria-expanded', 'true'); $('#btn-compare').textContent = 'Hide AI comparison'; } draw(); },
-    hide() { active = false; },
+    show(ctx = 'explore', opts = {}) {
+      const from = E.ctx; active = true; E.ctx = ctx; applyShift();
+      if (opts.noDraw) return Promise.resolve();   // the caller (Overview) applies a preset, which draws
+      // arriving from the Overview without an explicit view in the URL: open the cabin with the field visible
+      if (ctx === 'explore' && from === 'overview' && !E._queryLook) {
+        E.insideStyle = 'cutaway'; E.look = 'cutaway'; E.sliceOn = true; E.labels = true; E.sensors = !!E._querySensors; E.src = E.defaultSrc;
+        const lc = $('#ex-labels'); if (lc) lc.checked = true;
+        if (viewer) { viewer.setLook(E.look); viewer.setAutoRotate(false); applySensors(); setZone(E.zone, false); viewer.setView('Inside', true); }
+      }
+      E._queryLook = false; E._querySensors = false;
+      if (ctx === 'explore' && E.compare) { $('#compare').hidden = false; $('#btn-compare').setAttribute('aria-expanded', 'true'); $('#btn-compare').textContent = 'Hide AI comparison'; }
+      if (viewer && ctx === 'explore') viewer.setAutoRotate(false);
+      return draw();
+    },
+    hide() { active = false; if (viewer) viewer.setAutoRotate(false); },
     readQuery,
-    state: () => ({ ...E }),
+    state: () => ({ ...E, started: E.started }),
+    mount(slot) { const st = $('#stage'); if (st.parentElement !== slot) slot.append(st); applyShift(); if (viewer) { viewer.resize(); placeLabels(); } },
+    // drive the scene from the guided tour (camera from the USD stage, mode, layers, selection)
+    async preset(p) {
+      E.v = p.variable || E.v; E.sliceOn = !!p.slice; E.labels = p.labels !== false; E.sensors = !!p.sensors; E.probe = null; E.saved = null;
+      if (E.src !== E.defaultSrc) E.src = E.defaultSrc;
+      E.look = LOOK_ALIAS[p.look] || p.look; if (INSIDE.includes(E.look)) E.insideStyle = E.look;
+      const lc = $('#ex-labels'); if (lc) lc.checked = E.labels;
+      if (!E.noGL) {
+        try { await ensureViewer(); } catch (e) { console.warn(e); status(`Error: ${e.message}`); sens.exError = e.message; sens.exRenders++; return; }
+        viewer.setLook(E.look); applySensors();
+        viewer.setAutoRotate(!!p.rotate && !sens.autoRotateStoppedByUser);
+        if (p.zone) { setZone(p.zone, false); const z = ZONES.find((d) => d.id === p.zone); viewer.setView(p.camera || 'Inside', true); if (z) setTimeout(() => viewer.frameBox(z.bounds_min, z.bounds_max, true, E.ctx === "overview" ? 2.3 : 1.3), 950); }
+        else { setZone(null, false); viewer.setView(p.camera === 'Default' ? 'reset' : (p.camera || 'reset'), true); }
+      } else { E.zone = p.zone || null; }
+      return draw();
+    },
+    setShiftContext(ctx) { E.ctx = ctx; applyShift(); },
+    viewer: () => viewer,
+    zones: ZONES,
   };
 }

@@ -4,14 +4,19 @@ import { mapFor, rangeFor, colorOf, drawColorbar, fmt, registerLUT } from './col
 import { sliceImage, SlicePanel } from './slice2d.js';
 import { lineChart, barChart, histogram, curveChart, SERIES, LABEL } from './charts.js';
 import { initExplore } from './explore.js';
+import { initOverview } from './overview.js';
+import { renderPilot } from './pilot.js';
+import { ABOUT_DEMO } from '../content/story.js';
 
 const $ = (s) => document.querySelector(s);
 const ORDER = ['cfd', 'vanilla', 'pn', 'pi'];
 const SPLITNAME = { 0: 'train', 1: 'validation (held out)', 2: 'test (held out)', 3: 'buffer (excluded from training)' };
-const S = { mode: 'explore', tsub: 'results', model: 'pn', v: 'T', display: 'pred', view: '3d', orient3d: 'horizontal',
+const S = { mode: 'overview', tsub: 'results', model: 'pn', v: 'T', display: 'pred', view: '3d', orient3d: 'horizontal',
   sliceIdx: { horizontal: 2, longitudinal: 2, transverse: 6 }, layers: { cabin_shell: true, seats: true, occupants: true, hvac: true, slice: true, cloud: false },
   split: false, vec: false, probe: null, msplit: 'test', ref: null };
-let M, MET, viewer = null, panels = [], token = 0, explore = null, curves = null;
+let M, MET, viewer = null, panels = [], token = 0, explore = null, overview = null, curves = null, modeQuery = null;
+const MODES = ['overview', 'explore', 'pilot', 'technical'];
+const TSUBS = ['results', 'explorer', 'curves', 'scene', 'methods', 'images'];
 const isAdv = () => S.mode === 'technical' && S.tsub === 'explorer';
 window.__sensora = { S, net, state: () => ({ ...S }), ready: false };
 
@@ -48,6 +53,9 @@ async function boot() {
   if (M.public_profile) $('#build-profile').textContent = ` · ${M.public_profile.label}`;
   explore = initExplore({ M, MET, S });
   window.__sensora.explore = explore;
+  overview = initOverview({ explore, SC: getScene() });
+  renderPilot($('#pilot-body'));
+  bindAbout();
   readHash();
   bindUI();
   buildResults();
@@ -61,11 +69,12 @@ async function boot() {
 
 function readHash() {
   const h = location.hash.replace(/^#/, ''); let [mode, q] = h.split('?');
-  // legacy routes of the first version
-  mode = { story: 'explore', explorer: 'technical/explorer', about: 'technical/methods' }[mode] || mode;
+  // legacy routes of earlier versions keep working
+  mode = { '': 'overview', story: 'overview', explorer: 'technical/explorer', about: 'technical/methods', images: 'technical/images' }[mode] ?? mode;
   const [top, sub] = mode.split('/');
-  if (['explore', 'images', 'technical'].includes(top)) S.mode = top;
-  if (top === 'technical') S.tsub = ['results', 'explorer', 'curves', 'scene', 'methods'].includes(sub) ? sub : 'results';
+  S.mode = MODES.includes(top) ? top : 'overview';
+  if (top === 'technical') S.tsub = TSUBS.includes(sub) ? sub : 'results';
+  modeQuery = q ? new URLSearchParams(q) : null;
   if (top === 'explore' && q && explore) explore.readQuery(new URLSearchParams(q));
   if (top !== 'technical' || S.tsub !== 'explorer') return;
   if (q) for (const [k, v] of new URLSearchParams(q)) {
@@ -77,7 +86,7 @@ function readHash() {
   }
 }
 function writeHash() {
-  if (S.mode === 'explore') return; // the Explore view writes its own hash
+  if (S.mode === 'explore' || S.mode === 'overview') return; // these views write their own hash
   if (!isAdv()) { history.replaceState(null, '', S.mode === 'technical' ? `#technical/${S.tsub}` : `#${S.mode}`); return; }
   const o = currentOrient();
   const ri = S.ref ? refs().findIndex((r) => r.file === S.ref) : -1;
@@ -91,15 +100,18 @@ function setMode(mode, sub) {
   document.querySelectorAll('.tsub').forEach((s) => { s.hidden = s.dataset.sub !== S.tsub; });
   document.querySelectorAll('.sub-btn').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.sub === S.tsub)));
   writeHash();
-  if (mode === 'explore') explore.show(); else explore.hide();
+  if (mode === 'overview') { overview.show(modeQuery); }
+  else { overview.hide(); if (mode === 'explore') { explore.mount($('#ex-slot')); $('#stage').dataset.ctx = 'explore'; explore.show('explore'); } else explore.hide(); }
+  modeQuery = null;
   if (isAdv()) { syncControls(); update(); }
   if (mode === 'technical' && S.tsub === 'curves') renderCurves();
+  if (mode === 'technical') drawSplit();
   window.scrollTo(0, 0);
 }
 
 // ---------- UI binding
 function bindUI() {
-  document.querySelectorAll('.mode-btn').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
+  document.querySelectorAll('.mode-btn').forEach((b) => b.addEventListener('click', () => { if (b.dataset.mode === 'explore' || b.dataset.mode === 'overview') location.hash = `#${b.dataset.mode}`; else setMode(b.dataset.mode); }));
   document.querySelectorAll('.sub-btn').forEach((b) => b.addEventListener('click', () => setMode('technical', b.dataset.sub)));
   $('#sel-curve').addEventListener('change', renderCurves);
   const ml = $('#model-list');
@@ -389,6 +401,18 @@ function screenshot() {
   const a = document.createElement('a'); a.href = url; a.download = `sensora-bus_${S.model}_${S.v}_${S.view}.png`; a.click();
 }
 
+// ---------- "What this demo is" popover (opened from the header badge and the hero)
+function bindAbout() {
+  const pop = $('#about-pop'); const badge = $('#badge-demo');
+  $('#about-pop-body').innerHTML = ABOUT_DEMO.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
+  const set = (on) => { pop.hidden = !on; badge.setAttribute('aria-expanded', String(on)); if (on) $('#about-pop-close').focus({ preventScroll: true }); };
+  badge.addEventListener('click', () => set(pop.hidden));
+  $('#hero-tag-more').addEventListener('click', () => set(true));
+  $('#about-pop-close').addEventListener('click', () => { set(false); badge.focus({ preventScroll: true }); });
+  pop.addEventListener('keydown', (e) => { if (e.key === 'Escape') { set(false); badge.focus({ preventScroll: true }); } });
+  pop.querySelector('a').addEventListener('click', () => set(false));
+}
+
 // ---------- CFD reference images (gallery + CAD figure); hidden content when the build has none
 function buildImages() {
   const all = M.reference_images || [];
@@ -436,8 +460,15 @@ async function buildResults() {
     'Solver convergence is not verified. Only the iteration count (2100) was provided.',
     'Metrics average over exported cell centres, which cluster heavily near walls. They are not volume-weighted.',
     'No comfort indices (PMV/PPD), CO₂, energy savings or setpoint recommendations are computed. The data cannot support them.',
-    'The 3D bus surfaces are triangulated from the CFD boundary face centres for display only. They are not the solver mesh or the CAD model, and the exterior body below the cabin floor (chassis, wheels) is not part of the simulation.'];
+    'The 3D cabin surfaces are triangulated from the CFD boundary face centres for display only. They are not the solver mesh or the CAD model.',
+    'The exterior body, roof, wheels and mirrors are an illustrative shell generated around the cabin (approximate alignment; ground level assumed at z = 0). They are not manufacturer geometry and not part of the simulation, and no value is shown on them.',
+    'Zone summaries are voxel-weighted averages over a sample of the cabin air (one cell per 8 cm cube); CFD cell volumes were not exported, so they are not exact volume averages.'];
   $('#limits').innerHTML = lim.map((l) => `<li>${l}</li>`).join('');
+}
+// split picture: drawn the first time Technical details is opened (keeps the first view small)
+let splitDrawn = false;
+async function drawSplit() {
+  if (splitDrawn) return; splitDrawn = true;
   const hs = M.slices.filter((s) => s.orientation === 'horizontal').reduce((a, b) => (Math.abs(b.value - 1.1) < Math.abs(a.value - 1.1) ? b : a));
   const sd = await sliceData(hs.id);
   drawStory($('#split-canvas'), sliceImage(hs, sd, null, null, 0, 1, { splitView: true })); $('#split-z').textContent = hs.value.toFixed(2);
@@ -472,7 +503,9 @@ function buildScene() {
   const sc = getScene(); const box = $('#scene-body');
   if (!sc) { box.innerHTML = '<p class="warn">This build has no exported scene description (data/usd/scene.json); the 3D view uses the face-centre point clouds instead.</p>'; return; }
   const st = sc.stage; const R = sc.results; const g = sc.geometry;
-  const nMesh = g.prims.filter((p) => p.kind === 'mesh').length; const nTri = g.prims.reduce((a, p) => a + (p.n_tris || 0), 0);
+  const cfdP = g.prims.filter((p) => !p.decorative); const extP = g.prims.filter((p) => p.decorative);
+  const nMesh = cfdP.filter((p) => p.kind === 'mesh').length; const nTri = cfdP.reduce((a, p) => a + (p.n_tris || 0), 0);
+  const nExtTri = extP.reduce((a, p) => a + (p.n_tris || 0), 0);
   const par = Object.values(R.parity).flatMap((d) => Object.values(d)); const nSame = par.filter((x) => x.identical).length;
   const est = sc.slices.filter((x) => x.status === 'estimated_from_reference_render');
   const short = (h) => h.slice(0, 12);
@@ -486,12 +519,15 @@ function buildScene() {
   </div>
   <h2>What comes from the stage</h2>
   <ul>
-    <li><b>Geometry</b>: ${nMesh} display meshes (${nTri.toLocaleString('en-US')} triangles) and ${g.prims.length - nMesh} point sets, one prim per CFD boundary patch. Representation: ${g.representation}.</li>
+    <li><b>Geometry</b>: ${nMesh} display meshes (${nTri.toLocaleString('en-US')} triangles) and ${cfdP.length - nMesh} point sets, one prim per CFD boundary patch, plus ${extP.length} illustrative exterior parts (${nExtTri.toLocaleString('en-US')} triangles). Representation: ${g.representation}.</li>
     <li><b>Materials and default visibility</b>: from the presentation layer (UsdPreviewSurface colour and opacity, Imageable visibility).</li>
     <li><b>Cameras</b>: ${Object.keys(sc.cameras).join(', ')}; the default camera is <code>${sc.default_camera}</code>. <b>Labels</b>: ${sc.labels.length}, anchored at CFD patches.</li>
     <li><b>Scenario card</b>: ${sc.scenario.occupantCount} occupants, supply ${sc.scenario.supplyTemperatureC} °C, outdoor ${sc.scenario.outdoorTemperatureC} °C, solar load ${sc.scenario.solarLoadIncluded ? 'included' : 'not included'}. These values are read from the case's boundary conditions.</li>
     <li><b>Result sources</b>: the variant set <code>${R.variant_set}</code> on <code>${R.field_prim}</code> has variants ${R.variants.map((v) => `<code>${v}</code>`).join(', ')}; the authored selection is <code>${R.authored_selection}</code>. Each model's label, status and physics scope are listed below.</li>
     <li><b>Saved locations</b>: ${sc.probes.length} virtual probes. Each value is looked up by the exporter at the nearest simulated cell. They are not sensors.</li>
+    ${sc.exterior ? `<li><b>Illustrative exterior</b>: <code>${sc.exterior.path}</code> references <code>${(sc.exterior.references || [])[0] || ''}</code>, a shell generated around the cabin from CFD landmarks (alignment: <b>${sc.exterior.alignment.status}</b>, ${sc.exterior.alignment.method}). It is not CAD, not part of the CFD domain, and never used for probes, zones, physics or error metrics.</li>` : ''}
+    ${sc.zones ? `<li><b>Zones</b>: ${sc.zones.defs.map((z) => z.label).join(', ')} (<code>/World/Zones</code>, x limits from the patches ${[...new Set(sc.zones.defs.flatMap((z) => z.landmarks))].join(', ')}). Zone summaries are computed by the exporter from the payload values: ${sc.zones.summary.provenance.weighting}.</li>` : ''}
+    ${sc.proposed_sensors && sc.proposed_sensors.length ? `<li><b>Proposed sensor locations</b>: ${sc.proposed_sensors.length} markers in the presentation layer, status <code>${sc.proposed_sensors[0].status}</code>. Nothing is installed and no readings exist.</li>` : ''}
   </ul>
   <h2>What stays outside the stage (scientific assets)</h2>
   <ul>
@@ -512,6 +548,10 @@ function buildAbout() {
   const sel = MET.selection || {}; const ph = MET.physics_diagnostics || {};
   const physRows = Object.entries(ph).map(([m, d]) => `<tr><td>${LABEL[m]}</td><td>${fmt(d.continuity_train.rms)}</td><td>${fmt(d.continuity_heldout_val_test.rms)}</td></tr>`).join('');
   $('#about-body').innerHTML = `
+  <h2>About this demo</h2>
+  <p><b>Illustrative exterior; cabin fields come from the CFD dataset.</b></p>
+  <dl class="about-dl">${ABOUT_DEMO.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>
+  <p>The operator review uses documented demo rules on zone averages (see the Explore cabin page). The rules illustrate a workflow; they are not validated thresholds, comfort criteria or control logic. No comfort or health labels are given, and warmer does not mean unsafe.</p>
   <h2>Methods &amp; provenance</h2>
   <p><b>Run</b> <code>${M.run_id}</code> · <b>assets</b> <code>${M.asset_version}</code> · <b>case</b> <code>${M.case_id}</code></p>
   <h3>Data source</h3>

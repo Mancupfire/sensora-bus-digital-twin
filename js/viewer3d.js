@@ -19,6 +19,11 @@ const GROUP_STYLE = {
 // Group (from the USD prim path /World/Bus/<group>/...) -> UI layer toggle
 const GROUP_LAYER = { 'Geometry/Shell': 'body', 'Geometry/Windows': 'body', 'Geometry/Doors': 'body', 'Geometry/Floor': 'floor',
   'Geometry/Seats': 'seats', 'Geometry/Occupants': 'occupants', 'HVAC/Supply': 'hvac', 'HVAC/Return': 'hvac', 'HVAC/Leaks': 'hvac' };
+const layerOf = (group) => GROUP_LAYER[group] || (group.startsWith('Exterior/') ? 'exterior' : 'body');
+// render modes; each USD Look carries one opacity per mode (exterior = UsdPreviewSurface opacity,
+// cutaway = sensora:display:insideOpacity, xray / field = sensora:display:<mode>Opacity).  'inside' = 'cutaway'.
+export const MODES = ['exterior', 'cutaway', 'xray', 'field'];
+const REDUCED = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 export class Viewer3D {
   constructor(host, manifest, opts = {}) {
@@ -38,8 +43,10 @@ export class Viewer3D {
     this.camera.up.set(...UP);
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    this.controls.minDistance = 1.5; this.controls.maxDistance = 30;
+    this.controls.minDistance = 1.5; this.controls.maxDistance = 40;
     this.controls.addEventListener('change', () => this.render());
+    // any user gesture stops the idle auto-rotation and any running camera flight
+    this.controls.addEventListener('start', () => { this._tween = null; if (this.controls.autoRotate) { this.controls.autoRotate = false; if (this.onUserStop) this.onUserStop(); } });
     this.look = 'inside';
     this.layers = {}; this.groups = {}; this.meshes = [];
     this.compare = null; // array of {sliceTex, cloudRGB} when compare mode
@@ -51,7 +58,11 @@ export class Viewer3D {
     this.onRender = null;
     this.setView(opts.initialView || 'oblique');
     new ResizeObserver(() => this.resize()).observe(host);
-    const loop = () => { if (this.controls.enableDamping && this.controls.update()) this.render(); requestAnimationFrame(loop); };
+    const loop = (t) => {
+      if (this._tween) this._step(t);
+      else if ((this.controls.enableDamping || this.controls.autoRotate) && this.controls.update()) this.render();
+      requestAnimationFrame(loop);
+    };
     requestAnimationFrame(loop);
   }
 
@@ -59,26 +70,48 @@ export class Viewer3D {
   // without one (Error explorer) a bbox-based fallback is used.  On narrow screens the eye backs off along the
   // view ray so the whole bus stays in frame.
   setCameras(cams, def) { this.cams = cams; this.defaultCam = def; }
-  setView(name) {
+  setView(name, animate = false) {
     const aspect = Math.max(0.5, (this.host.clientWidth || 4) / (this.host.clientHeight || 3));
-    const k = Math.max(1, 1.3 / aspect);
+    const k = Math.max(1, 1.2 / aspect) * (this.distScale || 1);
     let eye, tgt, fov = 36;
-    const usdName = { oblique: this.defaultCam, reset: this.defaultCam, front: 'Front', side: 'Side', top: 'Top' }[name] || name;
+    const usdName = { oblique: this.defaultCam, reset: this.defaultCam, front: 'Front', side: 'Side', top: 'Top', rear: 'Rear', inside: 'Inside' }[name] || name;
     if (this.cams && this.cams[usdName]) {
       const c = this.cams[usdName]; tgt = cfdToWorld(c.target); const e = cfdToWorld(c.eye);
       eye = e.map((v, i) => tgt[i] + (v - tgt[i]) * k); fov = c.fov_deg || fov;
     } else {
       const c = this.center, L = this.hi[0] - this.lo[0];
       eye = { oblique: [c.x - 1.02 * L * k, c.y + 0.98 * L * k, c.z + 0.56 * L * k], front: [c.x - 1.3 * L * k, c.y + 0.001, c.z + 0.3],
-        side: [c.x, c.y + 1.3 * L * k, c.z + 0.5], top: [c.x, c.y - 0.001, c.z + 1.45 * L * k] }[name === 'reset' ? 'oblique' : name];
+        side: [c.x, c.y + 1.3 * L * k, c.z + 0.5], top: [c.x, c.y - 0.001, c.z + 1.45 * L * k], rear: [c.x + 1.0 * L * k, c.y - 0.9 * L * k, c.z + 0.5 * L * k],
+        Inside: [c.x - 0.6 * L * k, c.y + 0.7 * L * k, c.z + 0.95 * L * k] }[name === 'reset' ? 'oblique' : name];
       tgt = [c.x, c.y, c.z];
       if (!eye) return;
     }
-    this.view = name; this.camera.fov = fov;
-    this.camera.position.set(...eye);
-    this.controls.target.set(...tgt); this.controls.update(); this.render();
+    this.view = name; this.camera.fov = fov; this.camera.updateProjectionMatrix();
+    this.flyTo(eye, tgt, animate);
   }
-  resetCamera() { this.setView(this.opts.initialView || 'oblique'); }
+  resetCamera(animate = false) { this.setView(this.opts.initialView || 'oblique', animate); }
+  // camera flight (eased); instant with reduced motion or when animate is false
+  flyTo(eye, tgt, animate = true) {
+    if (!animate || REDUCED()) { this._tween = null; this.camera.position.set(...eye); this.controls.target.set(...tgt); this.controls.update(); this.render(); return; }
+    this._tween = { t0: null, ms: 900, e0: this.camera.position.clone(), g0: this.controls.target.clone(),
+      e1: new THREE.Vector3(...eye), g1: new THREE.Vector3(...tgt) };
+  }
+  _step(t) {
+    const w = this._tween; if (w.t0 === null) w.t0 = t;
+    const u = Math.min(1, (t - w.t0) / w.ms); const k = u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
+    this.camera.position.lerpVectors(w.e0, w.e1, k); this.controls.target.lerpVectors(w.g0, w.g1, k);
+    this.controls.update(); this.render(); if (u >= 1) this._tween = null;
+  }
+  // frame an axis-aligned box (CFD frame) from the current viewing direction
+  frameBox(lo, hi, animate = true, pad = 1.25) {
+    const c = new THREE.Vector3(...cfdToWorld(lo.map((v, i) => (v + hi[i]) / 2)));
+    const r = 0.5 * Math.hypot(hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]) * pad;
+    const dir = this.camera.position.clone().sub(this.controls.target).normalize();
+    const aspect = Math.max(0.5, (this.host.clientWidth || 4) / (this.host.clientHeight || 3));
+    const fov = THREE.MathUtils.degToRad(this.camera.fov); const d = r / Math.sin(Math.min(fov, fov * aspect) / 2);
+    this.flyTo(c.clone().add(dir.multiplyScalar(d)).toArray(), c.toArray(), animate);
+  }
+  setAutoRotate(on) { this.controls.autoRotate = !!on && !REDUCED(); this.controls.autoRotateSpeed = 0.55; }
 
   // ----- geometry
   addGroup(name, xyz) {
@@ -104,25 +137,61 @@ export class Viewer3D {
       }
       const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
       g.setIndex(new THREE.BufferAttribute(new Uint16Array(buf, pm.i_offset, pm.n_tris * 3), 1));
-      const mat = new THREE.MeshLambertMaterial({ color: look.color, side: THREE.DoubleSide, emissive: look.emissive || '#000000', flatShading: true });
+      let mat;
+      if (look.smooth) {   // illustrative exterior: smooth, slightly glossy
+        g.computeVertexNormals();
+        mat = new THREE.MeshPhongMaterial({ color: look.color, side: THREE.DoubleSide, emissive: look.emissive || '#000000', shininess: 45, specular: 0x333a44 });
+      } else mat = new THREE.MeshLambertMaterial({ color: look.color, side: THREE.DoubleSide, emissive: look.emissive || '#000000', flatShading: true });
       const mesh = new THREE.Mesh(g, mat);
-      mesh.userData = { layer: GROUP_LAYER[pm.group] || 'body', role: pm.role, patch: pm.zone, prim: pm.path,
-        style: { exterior: look.opacity_exterior, inside: look.opacity_inside }, usdHidden: !pm.visible };
-      mesh.renderOrder = look.opacity_exterior < 0.9 ? 3 : (look.opacity_inside < 0.9 ? 2 : 0);
+      const style = { exterior: look.opacity_exterior, cutaway: look.opacity_cutaway ?? look.opacity_inside,
+        xray: look.opacity_xray ?? look.opacity_inside, field: look.opacity_field ?? look.opacity_inside };
+      mesh.userData = { layer: layerOf(pm.group), role: pm.role, patch: pm.zone, prim: pm.path, decorative: !!pm.decorative,
+        style, usdHidden: !pm.visible };
+      // draw order: opaque first, then translucent cabin, then the translucent illustrative shell; ground first
+      mesh.renderOrder = pm.role === 'exterior_ground' ? -1 : (pm.decorative ? 4 : (look.opacity_exterior < 0.9 ? 3 : (look.opacity_inside < 0.9 ? 2 : 0)));
       this.scene.add(mesh); this.meshes.push(mesh);
     }
     this.setLook(this.look);
   }
-  // 'inside': ceiling removed, walls and glass faint, so the cabin and the slice are visible.
-  // 'exterior': closed, mostly opaque body with see-through glazing.
+  // exterior: closed bus (tinted glazing).  cutaway: roof and glazing removed, cabin walls faint.
+  // xray: semi-transparent shell around the cabin.  field: everything faint so the CFD slice is the subject.
   setLook(look) {
+    if (look === 'inside') look = 'cutaway';
     this.look = look;
     for (const m of this.meshes) {
-      const a = m.userData.style[look]; const mat = m.material;
+      const a = m.userData.style[look] ?? m.userData.style.cutaway; const mat = m.material;
       mat.opacity = a; mat.transparent = a < 1; mat.depthWrite = a >= 0.9;
       m.userData.lookHidden = a <= 0.001; mat.needsUpdate = true;
     }
     this.applyLayers(); this.render();
+  }
+  // highlighted analysis zone (presentation only): translucent box + outline
+  setZone(lo, hi, color = 0xb5e61d) {
+    if (this.zoneBox) { this.scene.remove(this.zoneBox); this.zoneBox.traverse((o) => { if (o.geometry) o.geometry.dispose(); }); this.zoneBox = null; }
+    if (lo) {
+      const size = hi.map((v, i) => v - lo[i]); const c = lo.map((v, i) => (v + hi[i]) / 2);
+      const geo = new THREE.BoxGeometry(...size);
+      const box = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.10, depthWrite: false }));
+      box.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.9 })));
+      box.position.set(...cfdToWorld(c)); box.renderOrder = 5; box.userData.layer = 'zone';
+      this.zoneBox = box; this.scene.add(box); this.applyLayers();
+    }
+    this.render();
+  }
+  // proposed (not installed) sensor locations: small markers, no values
+  setSensors(points) {
+    if (this.sensorGroup) { this.scene.remove(this.sensorGroup); this.sensorGroup = null; }
+    if (points && points.length) {
+      const g = new THREE.Group(); g.userData.layer = 'sensors';
+      const geo = new THREE.SphereGeometry(0.075, 18, 12);
+      for (const p of points) {
+        const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0xb5e61d, depthTest: false }));
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.014, 8, 32), new THREE.MeshBasicMaterial({ color: 0xffffff, depthTest: false }));
+        m.add(ring); m.position.set(...cfdToWorld(p)); m.renderOrder = 7; ring.renderOrder = 7; g.add(m);
+      }
+      this.sensorGroup = g; this.scene.add(g);
+    }
+    this.render();
   }
   addMarkers(points, color = 0xff4d4d, radius = 0.035, layer = 'occupants') {
     const geo = new THREE.SphereGeometry(radius, 12, 8); const mat = new THREE.MeshBasicMaterial({ color });
