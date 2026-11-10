@@ -8,5 +8,5 @@ plus precomputed predictions of three neural surrogates (Vanilla DeepONet, PN-De
 * Not included: raw CFD tables, model checkpoints, the supplied CAD view and solver renders.
 * One scenario only: the demo does not predict other HVAC settings.
 
-Built from the Sensora Bus Digital Twin project, asset version 20261110141614. Data and predictions belong to the
+Built from the Sensora Bus Digital Twin project, asset version 20261110155159. Data and predictions belong to the
 project's data owner; do not reuse without permission.

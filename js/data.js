@@ -17,10 +17,21 @@ async function fetchChecked(url, kind) {
   return kind === 'json' ? r.json() : r.arrayBuffer();
 }
 
+let scene = null;
 export async function loadManifest() {
   manifest = await fetchChecked(new URL('data/manifest.json', document.baseURI) + `?t=${Date.now()}`, 'json');
   metrics = await fetchChecked(assetURL('metrics.json'), 'json');
-  return { manifest, metrics };
+  // scene description exported from the OpenUSD stage (optional: the app falls back to point clouds without it)
+  if (manifest.scene) {
+    try { scene = await fetchChecked(assetURL(manifest.scene.file), 'json'); } catch (e) { console.warn('scene.json not loaded:', e.message); scene = null; }
+  }
+  return { manifest, metrics, scene };
+}
+export const getScene = () => scene;
+// a file listed in the USD web export (data/usd/...), fetched once
+export async function sceneBin(rel) {
+  if (!cache.has(rel)) cache.set(rel, fetchChecked(assetURL(rel), 'bin'));
+  return cache.get(rel);
 }
 export const getManifest = () => manifest;
 export const getMetrics = () => metrics;

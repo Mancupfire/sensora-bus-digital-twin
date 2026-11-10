@@ -1,0 +1,13 @@
+{
+ "inputs_sha256": "be954e1b8d6bdb426b892b5ed4760fd7f22fbdb140ceed2a031495b156c0fab7",
+ "files": {
+  "scene.json": {
+   "bytes": 38862,
+   "sha256": "425b702fed2ed8f378afcf3e750e0b28687110dea16efa7d26c86c1a39b3a29a"
+  },
+  "geometry.bin": {
+   "bytes": 1204328,
+   "sha256": "093e68c0669ac9afd2ad6dacb65e7a3a2acb274ad835e714b64d0867f8a5b9cd"
+  }
+ }
+}

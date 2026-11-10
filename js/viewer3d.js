@@ -5,6 +5,7 @@
 // Compare mode renders the same scene into several scissor viewports with ONE shared camera.
 import * as THREE from 'three';
 import { OrbitControls } from '../vendor/three/OrbitControls.js';
+import { cfdToWorld, worldToCfd, UP } from './frame.js';
 
 const GROUP_STYLE = {
   cabin_shell: { color: 0x7d8fa9, size: 0.012, opacity: 0.35, layer: 'cabin_shell' },
@@ -15,19 +16,9 @@ const GROUP_STYLE = {
   hvac_return: { color: 0xa78bfa, size: 0.02, opacity: 1, layer: 'hvac' },
   leak_outlet: { color: 0xfacc15, size: 0.02, opacity: 1, layer: 'hvac' },
 };
-// display-surface styles per role; `inside` / `exterior` give the opacity in each look
-const ROLE_STYLE = {
-  floor: { color: 0x4b5563, inside: 1, exterior: 1, layer: 'cabin_shell' },
-  wall: { color: 0xdfe7f1, inside: 0.16, exterior: 0.96, layer: 'cabin_shell' },
-  door: { color: 0xb9c7d8, inside: 0.22, exterior: 0.96, layer: 'cabin_shell' },
-  ceiling: { color: 0xe8eef5, inside: 0, exterior: 0.97, layer: 'cabin_shell' },
-  glass: { color: 0x7cc3f5, inside: 0.14, exterior: 0.42, layer: 'cabin_shell' },
-  seat: { color: 0x3f5f99, inside: 1, exterior: 1, layer: 'seats' },
-  person: { color: 0xf2a774, inside: 1, exterior: 1, layer: 'occupants' },
-  vent: { color: 0x22d3ee, inside: 1, exterior: 1, layer: 'hvac', emissive: 0x0e7490 },
-  return: { color: 0xa78bfa, inside: 1, exterior: 1, layer: 'hvac', emissive: 0x4c1d95 },
-  leak: { color: 0xfacc15, inside: 1, exterior: 1, layer: 'hvac', emissive: 0x713f12 },
-};
+// Group (from the USD prim path /World/Bus/<group>/...) -> UI layer toggle
+const GROUP_LAYER = { 'Geometry/Shell': 'body', 'Geometry/Windows': 'body', 'Geometry/Doors': 'body', 'Geometry/Floor': 'floor',
+  'Geometry/Seats': 'seats', 'Geometry/Occupants': 'occupants', 'HVAC/Supply': 'hvac', 'HVAC/Return': 'hvac', 'HVAC/Leaks': 'hvac' };
 
 export class Viewer3D {
   constructor(host, manifest, opts = {}) {
@@ -44,7 +35,7 @@ export class Viewer3D {
     this.lo = lo; this.hi = hi;
     this.center = new THREE.Vector3((lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, (lo[2] + hi[2]) / 2);
     this.camera = new THREE.PerspectiveCamera(36, 1, 0.05, 200);
-    this.camera.up.set(0, 0, 1);
+    this.camera.up.set(...UP);
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.controls.minDistance = 1.5; this.controls.maxDistance = 30;
@@ -64,21 +55,28 @@ export class Viewer3D {
     requestAnimationFrame(loop);
   }
 
-  // ----- camera presets (frame: x rearward, y toward the doors, z up)
+  // ----- cameras.  With an exported USD scene the presets come from /World/Cameras (eye, target, fov);
+  // without one (Error explorer) a bbox-based fallback is used.  On narrow screens the eye backs off along the
+  // view ray so the whole bus stays in frame.
+  setCameras(cams, def) { this.cams = cams; this.defaultCam = def; }
   setView(name) {
-    const c = this.center, L = this.hi[0] - this.lo[0];
     const aspect = Math.max(0.5, (this.host.clientWidth || 4) / (this.host.clientHeight || 3));
-    const k = Math.max(1, 1.3 / aspect);  // back off on narrow (portrait) screens
-    const P = {
-      oblique: [c.x - 1.02 * L * k, c.y + 0.98 * L * k, c.z + 0.56 * L * k],
-      front: [c.x - 1.3 * L * k, c.y + 0.001, c.z + 0.3],
-      side: [c.x, c.y + 1.3 * L * k, c.z + 0.5],
-      top: [c.x, c.y - 0.001, c.z + 1.45 * L * k],
-    }[name] || null;
-    if (!P) return;
-    this.view = name;
-    this.camera.position.set(...P);
-    this.controls.target.copy(c); this.controls.update(); this.render();
+    const k = Math.max(1, 1.3 / aspect);
+    let eye, tgt, fov = 36;
+    const usdName = { oblique: this.defaultCam, reset: this.defaultCam, front: 'Front', side: 'Side', top: 'Top' }[name] || name;
+    if (this.cams && this.cams[usdName]) {
+      const c = this.cams[usdName]; tgt = cfdToWorld(c.target); const e = cfdToWorld(c.eye);
+      eye = e.map((v, i) => tgt[i] + (v - tgt[i]) * k); fov = c.fov_deg || fov;
+    } else {
+      const c = this.center, L = this.hi[0] - this.lo[0];
+      eye = { oblique: [c.x - 1.02 * L * k, c.y + 0.98 * L * k, c.z + 0.56 * L * k], front: [c.x - 1.3 * L * k, c.y + 0.001, c.z + 0.3],
+        side: [c.x, c.y + 1.3 * L * k, c.z + 0.5], top: [c.x, c.y - 0.001, c.z + 1.45 * L * k] }[name === 'reset' ? 'oblique' : name];
+      tgt = [c.x, c.y, c.z];
+      if (!eye) return;
+    }
+    this.view = name; this.camera.fov = fov;
+    this.camera.position.set(...eye);
+    this.controls.target.set(...tgt); this.controls.update(); this.render();
   }
   resetCamera() { this.setView(this.opts.initialView || 'oblique'); }
 
@@ -90,22 +88,27 @@ export class Viewer3D {
     const p = new THREE.Points(g, mat); p.userData.layer = st.layer; this.scene.add(p); this.groups[name] = p;
     this.render();
   }
-  // buf: ArrayBuffer of geometry/display_mesh.bin; meta: manifest.display_mesh
-  addDisplayMesh(buf, meta) {
-    const { lo, hi } = this;
-    for (const pm of meta.patches) {
-      const st = ROLE_STYLE[pm.role];
-      if (!st) continue;  // mouths are shown as markers by the app
+  // buf: data/usd/geometry.bin; scene: data/usd/scene.json (written from the COMPOSED USD stage by export-web).
+  // Colours/opacities come from the bound USD material (UsdPreviewSurface diffuseColor / opacity, and the
+  // sensora:display:insideOpacity convention); default visibility from UsdGeomImageable visibility.
+  addSceneGeometry(buf, scene) {
+    const { lo, hi } = scene.geometry.quant_bbox;
+    for (const pm of scene.geometry.prims) {
+      if (pm.kind !== 'mesh') continue;     // mouths are face-centre point sets; not drawn in the demo
+      const look = scene.geometry.looks[pm.look] || { color: '#cccccc', opacity_exterior: 1, opacity_inside: 1 };
       const q = new Int16Array(buf, pm.v_offset, pm.n_verts * 3);
-      const pos = new Float32Array(q.length);
-      for (let i = 0; i < q.length; i++) { const a = i % 3; pos[i] = lo[a] + (q[i] / 32767) * (hi[a] - lo[a]); }
+      const pos = new Float32Array(q.length); const p = [0, 0, 0];
+      for (let i = 0; i < q.length; i += 3) {
+        for (let a = 0; a < 3; a++) p[a] = lo[a] + (q[i + a] / 32767) * (hi[a] - lo[a]);
+        const w = cfdToWorld(p); pos[i] = w[0]; pos[i + 1] = w[1]; pos[i + 2] = w[2];
+      }
       const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
       g.setIndex(new THREE.BufferAttribute(new Uint16Array(buf, pm.i_offset, pm.n_tris * 3), 1));
-      g.computeVertexNormals();
-      const mat = new THREE.MeshLambertMaterial({ color: st.color, side: THREE.DoubleSide, emissive: st.emissive || 0x000000, flatShading: true });
+      const mat = new THREE.MeshLambertMaterial({ color: look.color, side: THREE.DoubleSide, emissive: look.emissive || '#000000', flatShading: true });
       const mesh = new THREE.Mesh(g, mat);
-      mesh.userData = { layer: st.layer, role: pm.role, patch: pm.patch, style: st };
-      mesh.renderOrder = pm.role === 'glass' ? 3 : ['wall', 'door', 'ceiling'].includes(pm.role) ? 2 : 0;
+      mesh.userData = { layer: GROUP_LAYER[pm.group] || 'body', role: pm.role, patch: pm.zone, prim: pm.path,
+        style: { exterior: look.opacity_exterior, inside: look.opacity_inside }, usdHidden: !pm.visible };
+      mesh.renderOrder = look.opacity_exterior < 0.9 ? 3 : (look.opacity_inside < 0.9 ? 2 : 0);
       this.scene.add(mesh); this.meshes.push(mesh);
     }
     this.setLook(this.look);
@@ -170,14 +173,14 @@ export class Viewer3D {
       const ring = new THREE.Mesh(new THREE.SphereGeometry(0.15, 20, 14), new THREE.MeshBasicMaterial({ color: 0x0b1529, wireframe: true, depthTest: false }));
       m.add(ring); m.renderOrder = 6; this.scene.add(m); this.probeMarker = m;
     }
-    this.probeMarker.visible = !!p; if (p) this.probeMarker.position.set(...p);
+    this.probeMarker.visible = !!p; if (p) this.probeMarker.position.set(...cfdToWorld(p));
     this.render();
   }
   // shift the drawn scene horizontally by a fraction of the width (keeps room for an overlay card)
   setShift(fx, fy = 0) { this.shift = fx; this.shiftY = fy; this.render(); }
   setLayerVisible(layer, on) { this.layers[layer] = on; this.applyLayers(); this.render(); }
   applyLayers() {
-    this.scene.traverse((o) => { if (o.userData && o.userData.layer) o.visible = this.layers[o.userData.layer] !== false && !o.userData.lookHidden; });
+    this.scene.traverse((o) => { if (o.userData && o.userData.layer) o.visible = this.layers[o.userData.layer] !== false && !o.userData.lookHidden && !o.userData.usdHidden; });
   }
   setCompare(items) { this.compare = items; this.render(); }
   resize() {
@@ -185,8 +188,8 @@ export class Viewer3D {
     this.renderer.setSize(w, h, false); this.render();
   }
   // world -> CSS pixel position inside host (null when behind the camera)
-  project(p) {
-    const v = new THREE.Vector3(...p).project(this.camera);
+  project(p) {   // p in the CFD frame
+    const v = new THREE.Vector3(...cfdToWorld(p)).project(this.camera);
     if (v.z > 1) return null;
     return [(v.x + 1) / 2 * this.host.clientWidth, (1 - v.y) / 2 * this.host.clientHeight];
   }
@@ -222,8 +225,8 @@ export class Viewer3D {
     const h = hits[0];
     if (h.object === this.slicePlane) {
       const g = h.object.userData.slice.grid; const q = Math.floor(h.uv.x * g.nx), r = Math.floor(h.uv.y * g.ny);
-      this.onProbe({ kind: 'slice', q: Math.min(g.nx - 1, q), r: Math.min(g.ny - 1, r), point: h.point.toArray() });
-    } else { this.onProbe({ kind: 'cloud', index: h.index, point: h.point.toArray() }); }
+      this.onProbe({ kind: 'slice', q: Math.min(g.nx - 1, q), r: Math.min(g.ny - 1, r), point: worldToCfd(h.point.toArray()) });
+    } else { this.onProbe({ kind: 'cloud', index: h.index, point: worldToCfd(h.point.toArray()) }); }
   }
   screenshot() { this.render(); return this.renderer.domElement.toDataURL('image/png'); }
 }

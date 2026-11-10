@@ -209,3 +209,18 @@ select.narrow { max-width: 460px; }
   .mode-btn { padding: 6px 8px; white-space: nowrap; font-size: 13px; } .badge-static { margin-left: auto; }
   .intro h1 { font-size: 24px; } .intro p { font-size: 15px; margin-bottom: 10px; }
 }
+
+/* v3: saved locations (USD probes) + scene architecture */
+.saved-h { font-weight: 600; font-size: 14px; margin-bottom: 6px; }
+.saved-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.saved-list button { font: inherit; font-size: 13px; color: var(--text); background: rgba(255,255,255,.04); border: 1px solid var(--line); border-radius: 999px; padding: 5px 10px; cursor: pointer; }
+.saved-list button[aria-pressed="true"] { border-color: var(--cyan); background: rgba(34,211,238,.14); }
+.arch { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 14px 0; }
+.arch .box { padding: 12px; border-radius: 12px; border: 1px solid var(--line); background: rgba(255,255,255,.03); }
+.arch .box h3 { margin: 0 0 4px; font-size: 15px; color: var(--cyan); } .arch .box p { margin: 0; font-size: 13.5px; color: #c9d6e6; }
+.arch .arrow { display: none; }
+table.layers td, table.layers th { white-space: normal; text-align: left !important; }
+@media (max-width: 900px) { .arch { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .arch { grid-template-columns: 1fr; } }
+.stage.nogl { background: repeating-linear-gradient(135deg, rgba(255,255,255,.02) 0 12px, transparent 12px 24px), var(--panel); }
+.stage.nogl .viewbtns { display: none; }

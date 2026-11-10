@@ -1,5 +1,5 @@
 // Sensora Bus Digital Twin — static explorer. All numbers come from data/manifest.json and data/metrics.json.
-import { loadManifest, getManifest, getMetrics, sliceData, sliceField, cloudField, bin, dequantXYZ, sourceAvailable, net, assetURL } from './data.js';
+import { loadManifest, getManifest, getMetrics, getScene, sliceData, sliceField, cloudField, bin, dequantXYZ, sourceAvailable, net, assetURL } from './data.js';
 import { mapFor, rangeFor, colorOf, drawColorbar, fmt, registerLUT } from './colormap.js';
 import { sliceImage, SlicePanel } from './slice2d.js';
 import { lineChart, barChart, histogram, curveChart, SERIES, LABEL } from './charts.js';
@@ -53,6 +53,7 @@ async function boot() {
   buildResults();
   buildImages();
   buildAbout();
+  buildScene();
   setMode(S.mode, S.tsub);
   window.addEventListener('hashchange', () => { readHash(); setMode(S.mode, S.tsub); });
   window.__sensora.ready = true;
@@ -64,7 +65,7 @@ function readHash() {
   mode = { story: 'explore', explorer: 'technical/explorer', about: 'technical/methods' }[mode] || mode;
   const [top, sub] = mode.split('/');
   if (['explore', 'images', 'technical'].includes(top)) S.mode = top;
-  if (top === 'technical') S.tsub = ['results', 'explorer', 'curves', 'methods'].includes(sub) ? sub : 'results';
+  if (top === 'technical') S.tsub = ['results', 'explorer', 'curves', 'scene', 'methods'].includes(sub) ? sub : 'results';
   if (top === 'explore' && q && explore) explore.readQuery(new URLSearchParams(q));
   if (top !== 'technical' || S.tsub !== 'explorer') return;
   if (q) for (const [k, v] of new URLSearchParams(q)) {
@@ -464,6 +465,47 @@ async function renderCurves() {
   }
   curveChart($('#curve-canvas'), ser, 'training step (PI candidates: steps after the warm start from PN)', $('#sel-curve').selectedOptions[0].textContent);
   cap.textContent = `${curves.note} Rings mark the selected checkpoint of each run. Every PI candidate kept its warm start (step 0 = the selected PN), because no later PI step improved validation; the selected PI checkpoint is therefore identical to PN. Selection rule for PI: ${curves.pi_rule || '—'}.`;
+}
+
+// ---------- technical: scene architecture (OpenUSD), read from data/usd/scene.json
+function buildScene() {
+  const sc = getScene(); const box = $('#scene-body');
+  if (!sc) { box.innerHTML = '<p class="warn">This build has no exported scene description (data/usd/scene.json); the 3D view uses the face-centre point clouds instead.</p>'; return; }
+  const st = sc.stage; const R = sc.results; const g = sc.geometry;
+  const nMesh = g.prims.filter((p) => p.kind === 'mesh').length; const nTri = g.prims.reduce((a, p) => a + (p.n_tris || 0), 0);
+  const par = Object.values(R.parity).flatMap((d) => Object.values(d)); const nSame = par.filter((x) => x.identical).length;
+  const est = sc.slices.filter((x) => x.status === 'estimated_from_reference_render');
+  const short = (h) => h.slice(0, 12);
+  box.innerHTML = `
+  <p class="lead">The 3D scene of this demo is organised with <b>OpenUSD</b> (Universal Scene Description), separately from the scientific data. USD holds <i>what is where and how it looks</i>: the bus patches, the scenario, which result sources exist, cameras, materials, labels and saved locations. The CFD solution and the AI predictions stay in their own stored arrays. USD is a scene format: it does not run the CFD, train or run the AI models, or stream anything.</p>
+  <div class="arch">
+    <div class="box"><h3>1 · Scientific sources</h3><p>The STAR-CCM+ CFD export and the frozen model predictions. Read-only.</p></div>
+    <div class="box"><h3>2 · OpenUSD stage</h3><p><code>usd/bus_scene.usda</code>: ${st.layer_stack_strongest_first.length - 1} layers plus one payload per result source.</p></div>
+    <div class="box"><h3>3 · Web exporter</h3><p>Reads the <b>composed</b> stage with the OpenUSD API and writes <code>scene.json</code> and <code>geometry.bin</code>.</p></div>
+    <div class="box"><h3>4 · This page</h3><p>Static files only. No USD library and no server code run in the browser.</p></div>
+  </div>
+  <h2>What comes from the stage</h2>
+  <ul>
+    <li><b>Geometry</b>: ${nMesh} display meshes (${nTri.toLocaleString('en-US')} triangles) and ${g.prims.length - nMesh} point sets, one prim per CFD boundary patch. Representation: ${g.representation}.</li>
+    <li><b>Materials and default visibility</b>: from the presentation layer (UsdPreviewSurface colour and opacity, Imageable visibility).</li>
+    <li><b>Cameras</b>: ${Object.keys(sc.cameras).join(', ')}; the default camera is <code>${sc.default_camera}</code>. <b>Labels</b>: ${sc.labels.length}, anchored at CFD patches.</li>
+    <li><b>Scenario card</b>: ${sc.scenario.occupantCount} occupants, supply ${sc.scenario.supplyTemperatureC} °C, outdoor ${sc.scenario.outdoorTemperatureC} °C, solar load ${sc.scenario.solarLoadIncluded ? 'included' : 'not included'}. These values are read from the case's boundary conditions.</li>
+    <li><b>Result sources</b>: the variant set <code>${R.variant_set}</code> on <code>${R.field_prim}</code> has variants ${R.variants.map((v) => `<code>${v}</code>`).join(', ')}; the authored selection is <code>${R.authored_selection}</code>. Each model's label, status and physics scope are listed below.</li>
+    <li><b>Saved locations</b>: ${sc.probes.length} virtual probes. Each value is looked up by the exporter at the nearest simulated cell. They are not sensors.</li>
+  </ul>
+  <h2>What stays outside the stage (scientific assets)</h2>
+  <ul>
+    <li>The coloured <b>slices</b> and their values: <code>data/slices/&lt;id&gt;/</code>. The stage records each slice plane (${sc.slices.length} planes; ${est.length} of them are <b>estimated</b> from a supplied solver render, not confirmed).</li>
+    <li>The <b>3D preview fields</b> used by the Error explorer: <code>data/cloud/</code>. The stage holds the same ${R.point_count.toLocaleString('en-US')} points. Re-quantised from USD, <b>${nSame}/${par.length}</b> field files are byte-identical to these assets, so they are reused rather than duplicated.</li>
+    <li>Metrics, learning curves and the full-resolution CFD and prediction arrays. The full arrays are never shipped to the browser.</li>
+  </ul>
+  <h2>Result sources</h2>
+  <table class="metrics layers"><tr><th>source</th><th>label</th><th>status</th><th>physics scope</th></tr>${Object.entries(R.sources).map(([k, v]) => `<tr><td><code>${k}</code></td><td>${v.label}</td><td>${v.available ? v.status : 'unavailable'}${v.selected_is_initial ? ' (selected checkpoint = PN parent)' : ''}</td><td>${v.physics_scope}</td></tr>`).join('')}</table>
+  <h2>Layer stack (strongest first)</h2>
+  <table class="metrics layers"><tr><th>layer</th><th>holds</th><th>sha256</th></tr>${st.layer_stack_strongest_first.map((l) => `<tr><td><code>${l.layer}</code></td><td>${l.doc}</td><td><code>${short(l.sha256)}</code></td></tr>`).join('')}</table>
+  <h2>Frame, units, versions</h2>
+  <p>${st.frame}. upAxis = ${st.upAxis}, metersPerUnit = ${st.metersPerUnit}; ${st.web_frame}. Temperatures are in °C, velocity in m/s, and pressure is the working pressure in Pa, as in the CSV export. The supplied <code>p_piezo</code> render does not match this pressure (see Results &amp; metrics). OpenUSD ${sc.usd_version}, exporter ${sc.export_version}, exported ${sc.exported_utc}, stage built from run <code>${st.built.runId}</code> at commit <code>${st.built.gitCommit}</code>.</p>
+  <p class="note">${M.public_profile ? 'A portable USD preview of the scene (no field values) is included in the offline package only.' : (sc.preview_package ? `Download the portable USD preview: <a href="data/${sc.preview_package}" download>${sc.preview_package.split('/').pop()}</a>. It contains the geometry, scenario, slice planes, probes, cameras and materials, but no field values. It is a preview, not the CFD dataset.` : '')}</p>`;
 }
 
 function buildAbout() {

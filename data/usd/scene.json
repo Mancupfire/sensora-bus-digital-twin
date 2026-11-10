@@ -1,0 +1,1637 @@
+{
+ "schema": "sensora-usd-web/1",
+ "export_version": "sensora-usd/1.0",
+ "usd_version": "0.26.11",
+ "exported_utc": "2026-11-10T08:52:04Z",
+ "stage": {
+  "root": "bus_scene.usda",
+  "defaultPrim": "/World",
+  "upAxis": "Z",
+  "metersPerUnit": 1.0,
+  "layer_stack_strongest_first": [
+   {
+    "layer": "bus_scene.usda",
+    "sha256": "956491b42c00fcacb5d71725aa39e05f2e1991ed8661d1b2a5a79b5ab1a8945a",
+    "doc": "Sensora bus digital twin: OpenUSD scene of ONE steady RANS CFD case and three neural surrogates' precomputed predictions. Scene organisation only; not a solver."
+   },
+   {
+    "layer": "layers/presentation.usda",
+    "sha256": "9d9fbb7576c4806c9732932a71a180ff28f108ab9cb07647cb66a6cc98226e0c",
+    "doc": "Sensora bus scene: cameras, materials, bindings, visibility, labels (look & feel only)"
+   },
+   {
+    "layer": "layers/probes.usda",
+    "sha256": "31ebbf184bade0e662957e5d8e8dd6a19c413a53a04bd479ec8aee758d243a7b",
+    "doc": "Sensora bus scene: virtual probe definitions (+ cached values written by the application)"
+   },
+   {
+    "layer": "layers/results.usda",
+    "sha256": "4687d55a4b41443f36e44f57fb94465789759de9115a1c01ff8526c3c345df15",
+    "doc": "Sensora bus scene: result sources, availability, the `source` variantSet with payloads"
+   },
+   {
+    "layer": "layers/sampling.usdc",
+    "sha256": "3c2d7bea5658a93e1889d3b6d539c854346b78f0999a027c88588e7fedb9c2cf",
+    "doc": "Sensora bus scene: where results are sampled: 3D preview point set (ids, positions), slice planes"
+   },
+   {
+    "layer": "layers/scenario.usda",
+    "sha256": "873dd9368af2ae8f72ec8a0f6b3fac818cfb087f98f4eda428d18f1e7f634a4b",
+    "doc": "Sensora bus scene: the single steady CFD case: metadata and boundary conditions on patch prims"
+   },
+   {
+    "layer": "layers/geometry.usdc",
+    "sha256": "44f580deb418cfb96d4c37c6ad708a5ccbebbe38eb7a5cc6ac43a5c6434a0a4e",
+    "doc": "Sensora bus scene: boundary patches as reconstructed display meshes / point sets, identities"
+   }
+  ],
+  "built": {
+   "exportVersion": "sensora-usd/1.0",
+   "usdVersion": "0.26.11",
+   "runId": "20261110T025048Z",
+   "caseId": "VinBus_V2_CoTaiXe_CoNang",
+   "gitCommit": "549f455",
+   "builtUtc": "2026-11-10T08:52:03Z"
+  },
+  "frame": "X rearward along the bus, Y lateral (doors at Y>0), Z up; metres; origin front-bottom",
+  "web_frame": "identical to the CFD frame (Z up); see web/js/frame.js"
+ },
+ "geometry": {
+  "file": "usd/geometry.bin",
+  "quant_bbox": {
+   "lo": [
+    0.0533805219966009,
+    -1.1800000000000002,
+    0.3799999999999997
+   ],
+   "hi": [
+    8.550000000000002,
+    1.2150000000000003,
+    2.650000000000001
+   ]
+  },
+  "representation": "reconstructed_display_mesh (display only; not the solver mesh or CAD)",
+  "prims": [
+   {
+    "path": "/World/Bus/Geometry/Occupants/Human_Dung_2/Mouth",
+    "zone": "Human_Dung_2_mouth",
+    "role": "mouth",
+    "boundary_role": "inlet_mass_flow_mouth",
+    "representation": "boundary_face_centres",
+    "group": "Geometry/Occupants",
+    "visible": true,
+    "look": "/World/Looks/Mouth",
+    "source_faces": 60,
+    "kind": "points",
+    "n_points": 60,
+    "centroid": [
+     4.1003,
+     -0.8298,
+     1.9418
+    ]
+   },
+   {
+    "path": "/World/Bus/Geometry/Occupants/Human_Dung_2/Skin",
+    "zone": "Human_Dung_2_skin",
+    "role": "person",
+    "boundary_role": "wall_heat_flux",
+    "representation": "reconstructed_display_mesh",
+    "group": "Geometry/Occupants",
+    "visible": true,
+    "look": "/World/Looks/Skin",
+    "source_faces": 7282,
+    "v_offset": 0,
+    "n_verts": 3349,
+    "i_offset": 20096,
+    "n_tris": 6843,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/Geometry/Occupants/Human_Dung_3/Mouth",
+    "zone": "Human_Dung_3_mouth",
+    "role": "mouth",
+    "boundary_role": "inlet_mass_flow_mouth",
+    "representation": "boundary_face_centres",
+    "group": "Geometry/Occupants",
+    "visible": true,
+    "look": "/World/Looks/Mouth",
+    "source_faces": 60,
+    "kind": "points",
+    "n_points": 60,
+    "centroid": [
+     4.6435,
+     -0.8298,
+     1.9417
+    ]
+   },
+   {
+    "path": "/World/Bus/Geometry/Occupants/Human_Dung_3/Skin",
+    "zone": "Human_Dung_3_skin",
+    "role": "person",
+    "boundary_role": "wall_heat_flux",
+    "representation": "reconstructed_display_mesh",
+    "group": "Geometry/Occupants",
+    "visible": true,
+    "look": "/World/Looks/Skin",
+    "source_faces": 7169,
+    "v_offset": 61156,
+    "n_verts": 3351,
+    "i_offset": 81264,
+    "n_tris": 6877,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/Geometry/Occupants/Human_Dung_4/Mouth",
+    "zone": "Human_Dung_4_mouth",
+    "role": "mouth",
+    "boundary_role": "inlet_mass_flow_mouth",
+    "representation": "boundary_face_centres",
+    "group": "Geometry/Occupants",
+    "visible": true,
+    "look": "/World/Looks/Mouth",
+    "source_faces": 60,
+    "kind": "points",
+    "n_points": 60,
+    "centroid": [
+     4.5235,
+     -0.001,
+     1.9418
+    ]
+   },
+   {
+    "path": "/World/Bus/Geometry/Occupants/Human_Dung_4/Skin",
+    "zone": "Human_Dung_4_skin",
+    "role": "person",
+    "boundary_role": "wall_heat_flux",
+    "representation": "reconstructed_display_mesh",
+    "group": "Geometry/Occupants",
+    "visible": true,
+    "look": "/World/Looks/Skin",
+    "source_faces": 7159,
+    "v_offset": 122528,
+    "n_verts": 3368,
+    "i_offset": 142736,
+    "n_tris": 6867,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/Geometry/Occupants/Human_Dung/Mouth",
+    "zone": "Human_Dung_mouth",
+    "role": "mouth",
+    "boundary_role": "inlet_mass_flow_mouth",
+    "representation": "boundary_face_centres",
+    "group": "Geometry/Occupants",
+    "visible": true,
+    "look": "/World/Looks/Mouth",
+    "source_faces": 60,
+    "kind": "points",
+    "n_points": 60,
+    "centroid": [
+     4.0539,
+     -0.121,
+     1.9418
+    ]
+   },
+   {
+    "path": "/World/Bus/Geometry/Occupants/Human_Dung/Skin",
+    "zone": "Human_Dung_skin",
+    "role": "person",
+    "boundary_role": "wall_heat_flux",
+    "representation": "reconstructed_display_mesh",
+    "group": "Geometry/Occupants",
+    "visible": true,
+    "look": "/World/Looks/Skin",
+    "source_faces": 7182,
+    "v_offset": 183940,
+    "n_verts": 3368,
+    "i_offset": 204148,
+    "n_tris": 6880,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/Geometry/Occupants/Human_Ngoi/Mouth",
+    "zone": "Human_Ngoi_mouth",
+    "role": "mouth",
+    "boundary_role": "inlet_mass_flow_mouth",
+    "representation": "boundary_face_centres",
+    "group": "Geometry/Occupants",
+    "visible": true,
+    "look": "/World/Looks/Mouth",
+    "source_faces": 60,
+    "kind": "points",
+    "n_points": 60,
+    "centroid": [
+     8.1242,
+     0.6136,
+     1.915
+    ]
+   },
+   {
+    "path": "/World/Bus/Geometry/Occupants/Human_Ngoi/Skin",
+    "zone": "Human_Ngoi_skin",
+    "role": "person",
+    "boundary_role": "wall_heat_flux",
+    "representation": "reconstructed_display_mesh",
+    "group": "Geometry/Occupants",
+    "visible": true,
+    "look": "/World/Looks/Skin",
+    "source_faces": 6403,
+    "v_offset": 245428,
+    "n_verts": 2972,
+    "i_offset": 263260,
+    "n_tris": 5977,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/Geometry/Occupants/Human_TaiXe/Mouth",
+    "zone": "Human_TaiXe_mouth",
+    "role": "mouth",
+    "boundary_role": "inlet_mass_flow_mouth",
+    "representation": "boundary_face_centres",
+    "group": "Geometry/Occupants",
+    "visible": true,
+    "look": "/World/Looks/Mouth",
+    "source_faces": 60,
+    "kind": "points",
+    "n_points": 60,
+    "centroid": [
+     0.9302,
+     -0.6004,
+     1.741
+    ]
+   },
+   {
+    "path": "/World/Bus/Geometry/Occupants/Human_TaiXe/Skin",
+    "zone": "Human_TaiXe_skin",
+    "role": "person",
+    "boundary_role": "wall_heat_flux",
+    "representation": "reconstructed_display_mesh",
+    "group": "Geometry/Occupants",
+    "visible": true,
+    "look": "/World/Looks/Skin",
+    "source_faces": 5793,
+    "v_offset": 299124,
+    "n_verts": 2545,
+    "i_offset": 314396,
+    "n_tris": 5000,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/Geometry/Occupants/Human_ngoi_02/Mouth",
+    "zone": "Human_ngoi_02_mouth",
+    "role": "mouth",
+    "boundary_role": "inlet_mass_flow_mouth",
+    "representation": "boundary_face_centres",
+    "group": "Geometry/Occupants",
+    "visible": true,
+    "look": "/World/Looks/Mouth",
+    "source_faces": 60,
+    "kind": "points",
+    "n_points": 60,
+    "centroid": [
+     7.0922,
+     -0.4141,
+     1.915
+    ]
+   },
+   {
+    "path": "/World/Bus/Geometry/Occupants/Human_ngoi_02/Skin",
+    "zone": "Human_ngoi_02_skin",
+    "role": "person",
+    "boundary_role": "wall_heat_flux",
+    "representation": "reconstructed_display_mesh",
+    "group": "Geometry/Occupants",
+    "visible": true,
+    "look": "/World/Looks/Skin",
+    "source_faces": 6766,
+    "v_offset": 344396,
+    "n_verts": 3054,
+    "i_offset": 362720,
+    "n_tris": 6251,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/Geometry/Seats/seats",
+    "zone": "seats",
+    "role": "seat",
+    "boundary_role": "wall_convection",
+    "representation": "reconstructed_display_mesh",
+    "group": "Geometry/Seats",
+    "visible": true,
+    "look": "/World/Looks/Seat",
+    "source_faces": 17484,
+    "v_offset": 400228,
+    "n_verts": 12447,
+    "i_offset": 474912,
+    "n_tris": 25007,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/Geometry/Shell/ceiling",
+    "zone": "ceiling",
+    "role": "ceiling",
+    "boundary_role": "wall_convection",
+    "representation": "reconstructed_display_mesh",
+    "group": "Geometry/Shell",
+    "visible": true,
+    "look": "/World/Looks/Roof",
+    "source_faces": 25857,
+    "v_offset": 624956,
+    "n_verts": 7682,
+    "i_offset": 671048,
+    "n_tris": 14143,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/Geometry/Shell/driver_area",
+    "zone": "driver_area",
+    "role": "wall",
+    "boundary_role": "wall_adiabatic",
+    "representation": "reconstructed_display_mesh",
+    "group": "Geometry/Shell",
+    "visible": true,
+    "look": "/World/Looks/BodyPanel",
+    "source_faces": 6271,
+    "v_offset": 755908,
+    "n_verts": 2439,
+    "i_offset": 770544,
+    "n_tris": 4287,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/Geometry/Shell/leak_front_wall",
+    "zone": "leak_front_wall",
+    "role": "wall",
+    "boundary_role": "wall_adiabatic",
+    "representation": "reconstructed_display_mesh",
+    "group": "Geometry/Shell",
+    "visible": true,
+    "look": "/World/Looks/BodyPanel",
+    "source_faces": 12013,
+    "v_offset": 796268,
+    "n_verts": 51,
+    "i_offset": 796576,
+    "n_tris": 26,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/Geometry/Shell/leak_mid_wall",
+    "zone": "leak_mid_wall",
+    "role": "wall",
+    "boundary_role": "wall_adiabatic",
+    "representation": "reconstructed_display_mesh",
+    "group": "Geometry/Shell",
+    "visible": true,
+    "look": "/World/Looks/BodyPanel",
+    "source_faces": 17230,
+    "v_offset": 796732,
+    "n_verts": 69,
+    "i_offset": 797148,
+    "n_tris": 35,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/Geometry/Shell/wall_side",
+    "zone": "wall_side",
+    "role": "wall",
+    "boundary_role": "wall_convection",
+    "representation": "reconstructed_display_mesh",
+    "group": "Geometry/Shell",
+    "visible": true,
+    "look": "/World/Looks/BodyPanel",
+    "source_faces": 6898,
+    "v_offset": 797360,
+    "n_verts": 5891,
+    "i_offset": 832708,
+    "n_tris": 9014,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/Geometry/Shell/wall_side_patch",
+    "zone": "wall_side_patch",
+    "role": "wall",
+    "boundary_role": "wall_convection",
+    "representation": "reconstructed_display_mesh",
+    "group": "Geometry/Shell",
+    "visible": true,
+    "look": "/World/Looks/BodyPanel",
+    "source_faces": 105,
+    "v_offset": 886792,
+    "n_verts": 120,
+    "i_offset": 887512,
+    "n_tris": 115,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/Geometry/Shell/wheel_arch",
+    "zone": "wheel_arch",
+    "role": "wall",
+    "boundary_role": "wall_adiabatic",
+    "representation": "reconstructed_display_mesh",
+    "group": "Geometry/Shell",
+    "visible": true,
+    "look": "/World/Looks/BodyPanel",
+    "source_faces": 4350,
+    "v_offset": 888204,
+    "n_verts": 2646,
+    "i_offset": 904080,
+    "n_tris": 5045,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/Geometry/Doors/door_front",
+    "zone": "door_front",
+    "role": "door",
+    "boundary_role": "wall_convection",
+    "representation": "reconstructed_display_mesh",
+    "group": "Geometry/Doors",
+    "visible": true,
+    "look": "/World/Looks/Door",
+    "source_faces": 5051,
+    "v_offset": 934352,
+    "n_verts": 700,
+    "i_offset": 938552,
+    "n_tris": 1198,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/Geometry/Doors/door_middle",
+    "zone": "door_middle",
+    "role": "door",
+    "boundary_role": "wall_convection",
+    "representation": "reconstructed_display_mesh",
+    "group": "Geometry/Doors",
+    "visible": true,
+    "look": "/World/Looks/Door",
+    "source_faces": 7159,
+    "v_offset": 945740,
+    "n_verts": 965,
+    "i_offset": 951532,
+    "n_tris": 1697,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/Geometry/Floor/floor",
+    "zone": "floor",
+    "role": "floor",
+    "boundary_role": "wall_convection",
+    "representation": "reconstructed_display_mesh",
+    "group": "Geometry/Floor",
+    "visible": true,
+    "look": "/World/Looks/Floor",
+    "source_faces": 24764,
+    "v_offset": 961716,
+    "n_verts": 4744,
+    "i_offset": 990180,
+    "n_tris": 8779,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/Geometry/Windows/window_left",
+    "zone": "window_left",
+    "role": "glass",
+    "boundary_role": "wall_convection",
+    "representation": "reconstructed_display_mesh",
+    "group": "Geometry/Windows",
+    "visible": true,
+    "look": "/World/Looks/Glass",
+    "source_faces": 4794,
+    "v_offset": 1042856,
+    "n_verts": 3502,
+    "i_offset": 1063868,
+    "n_tris": 6101,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/Geometry/Windows/window_rear",
+    "zone": "window_rear",
+    "role": "glass",
+    "boundary_role": "wall_convection",
+    "representation": "reconstructed_display_mesh",
+    "group": "Geometry/Windows",
+    "visible": true,
+    "look": "/World/Looks/Glass",
+    "source_faces": 716,
+    "v_offset": 1100476,
+    "n_verts": 476,
+    "i_offset": 1103332,
+    "n_tris": 862,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/Geometry/Windows/window_right",
+    "zone": "window_right",
+    "role": "glass",
+    "boundary_role": "wall_convection",
+    "representation": "reconstructed_display_mesh",
+    "group": "Geometry/Windows",
+    "visible": true,
+    "look": "/World/Looks/Glass",
+    "source_faces": 3393,
+    "v_offset": 1108504,
+    "n_verts": 2488,
+    "i_offset": 1123432,
+    "n_tris": 4347,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/Geometry/Windows/windshield",
+    "zone": "windshield",
+    "role": "glass",
+    "boundary_role": "wall_convection",
+    "representation": "reconstructed_display_mesh",
+    "group": "Geometry/Windows",
+    "visible": true,
+    "look": "/World/Looks/Glass",
+    "source_faces": 1572,
+    "v_offset": 1149516,
+    "n_verts": 1169,
+    "i_offset": 1156532,
+    "n_tris": 2119,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/HVAC/Supply/inlet_driver_dash",
+    "zone": "inlet_driver_dash",
+    "role": "vent",
+    "boundary_role": "inlet_mass_flow_hvac",
+    "representation": "reconstructed_display_mesh",
+    "group": "HVAC/Supply",
+    "visible": true,
+    "look": "/World/Looks/SupplyVent",
+    "source_faces": 340,
+    "v_offset": 1169248,
+    "n_verts": 68,
+    "i_offset": 1169656,
+    "n_tris": 84,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/HVAC/Supply/inlet_driver_head",
+    "zone": "inlet_driver_head",
+    "role": "vent",
+    "boundary_role": "inlet_mass_flow_hvac",
+    "representation": "reconstructed_display_mesh",
+    "group": "HVAC/Supply",
+    "visible": true,
+    "look": "/World/Looks/SupplyVent",
+    "source_faces": 458,
+    "v_offset": 1170160,
+    "n_verts": 63,
+    "i_offset": 1170540,
+    "n_tris": 86,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/HVAC/Supply/inlet_supply_left",
+    "zone": "inlet_supply_left",
+    "role": "vent",
+    "boundary_role": "inlet_mass_flow_hvac",
+    "representation": "reconstructed_display_mesh",
+    "group": "HVAC/Supply",
+    "visible": true,
+    "look": "/World/Looks/SupplyVent",
+    "source_faces": 4386,
+    "v_offset": 1171056,
+    "n_verts": 773,
+    "i_offset": 1175696,
+    "n_tris": 984,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/HVAC/Supply/inlet_supply_right",
+    "zone": "inlet_supply_right",
+    "role": "vent",
+    "boundary_role": "inlet_mass_flow_hvac",
+    "representation": "reconstructed_display_mesh",
+    "group": "HVAC/Supply",
+    "visible": true,
+    "look": "/World/Looks/SupplyVent",
+    "source_faces": 4978,
+    "v_offset": 1181600,
+    "n_verts": 724,
+    "i_offset": 1185944,
+    "n_tris": 982,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/HVAC/Leaks/leak_front_outlet",
+    "zone": "leak_front_outlet",
+    "role": "leak",
+    "boundary_role": "pressure_outlet_leak",
+    "representation": "reconstructed_display_mesh",
+    "group": "HVAC/Leaks",
+    "visible": true,
+    "look": "/World/Looks/LeakSlot",
+    "source_faces": 2272,
+    "v_offset": 1191836,
+    "n_verts": 46,
+    "i_offset": 1192112,
+    "n_tris": 26,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/HVAC/Leaks/leak_mid_outlet",
+    "zone": "leak_mid_outlet",
+    "role": "leak",
+    "boundary_role": "pressure_outlet_leak",
+    "representation": "reconstructed_display_mesh",
+    "group": "HVAC/Leaks",
+    "visible": true,
+    "look": "/World/Looks/LeakSlot",
+    "source_faces": 3252,
+    "v_offset": 1192268,
+    "n_verts": 68,
+    "i_offset": 1192676,
+    "n_tris": 44,
+    "kind": "mesh"
+   },
+   {
+    "path": "/World/Bus/HVAC/Return/outlet_return",
+    "zone": "outlet_return",
+    "role": "return",
+    "boundary_role": "velocity_inlet_return",
+    "representation": "reconstructed_display_mesh",
+    "group": "HVAC/Return",
+    "visible": true,
+    "look": "/World/Looks/ReturnGrille",
+    "source_faces": 1915,
+    "v_offset": 1192940,
+    "n_verts": 702,
+    "i_offset": 1197152,
+    "n_tris": 1196,
+    "kind": "mesh"
+   }
+  ],
+  "looks": {
+   "/World/Looks/Mouth": {
+    "color": "#ff4d4d",
+    "opacity_exterior": 1.0,
+    "opacity_inside": 1.0,
+    "emissive": null
+   },
+   "/World/Looks/Skin": {
+    "color": "#f2a774",
+    "opacity_exterior": 1.0,
+    "opacity_inside": 1.0,
+    "emissive": null
+   },
+   "/World/Looks/Seat": {
+    "color": "#3f5f99",
+    "opacity_exterior": 1.0,
+    "opacity_inside": 1.0,
+    "emissive": null
+   },
+   "/World/Looks/Roof": {
+    "color": "#e8eef5",
+    "opacity_exterior": 0.9700000286102295,
+    "opacity_inside": 0.0,
+    "emissive": null
+   },
+   "/World/Looks/BodyPanel": {
+    "color": "#dfe7f1",
+    "opacity_exterior": 0.9599999785423279,
+    "opacity_inside": 0.1599999964237213,
+    "emissive": null
+   },
+   "/World/Looks/Door": {
+    "color": "#b9c7d8",
+    "opacity_exterior": 0.9599999785423279,
+    "opacity_inside": 0.2199999988079071,
+    "emissive": null
+   },
+   "/World/Looks/Floor": {
+    "color": "#4b5563",
+    "opacity_exterior": 1.0,
+    "opacity_inside": 1.0,
+    "emissive": null
+   },
+   "/World/Looks/Glass": {
+    "color": "#7cc3f5",
+    "opacity_exterior": 0.41999998688697815,
+    "opacity_inside": 0.14000000059604645,
+    "emissive": null
+   },
+   "/World/Looks/SupplyVent": {
+    "color": "#22d3ee",
+    "opacity_exterior": 1.0,
+    "opacity_inside": 1.0,
+    "emissive": "#0e7490"
+   },
+   "/World/Looks/LeakSlot": {
+    "color": "#facc15",
+    "opacity_exterior": 1.0,
+    "opacity_inside": 1.0,
+    "emissive": "#713f12"
+   },
+   "/World/Looks/ReturnGrille": {
+    "color": "#a78bfa",
+    "opacity_exterior": 1.0,
+    "opacity_inside": 1.0,
+    "emissive": "#4c1d95"
+   }
+  }
+ },
+ "cameras": {
+  "Default": {
+   "path": "/World/Cameras/Default",
+   "eye": [
+    -4.36486,
+    8.34419,
+    6.27311
+   ],
+   "target": [
+    4.30169,
+    0.0175,
+    1.515
+   ],
+   "up": [
+    0.26544,
+    -0.25503,
+    0.92979
+   ],
+   "fov_deg": 36.0
+  },
+  "Front": {
+   "path": "/World/Cameras/Front",
+   "eye": [
+    -6.74392,
+    0.0185,
+    1.815
+   ],
+   "target": [
+    4.30169,
+    0.0175,
+    1.515
+   ],
+   "up": [
+    0.02715,
+    -0.0,
+    0.99963
+   ],
+   "fov_deg": 36.0
+  },
+  "Side": {
+   "path": "/World/Cameras/Side",
+   "eye": [
+    4.30169,
+    11.06311,
+    2.015
+   ],
+   "target": [
+    4.30169,
+    0.0175,
+    1.515
+   ],
+   "up": [
+    0.0,
+    -0.04522,
+    0.99898
+   ],
+   "fov_deg": 36.0
+  },
+  "Top": {
+   "path": "/World/Cameras/Top",
+   "eye": [
+    4.30169,
+    0.0165,
+    13.8351
+   ],
+   "target": [
+    4.30169,
+    0.0175,
+    1.515
+   ],
+   "up": [
+    0.0,
+    1.0,
+    8e-05
+   ],
+   "fov_deg": 36.0
+  }
+ },
+ "default_camera": "Default",
+ "labels": [
+  {
+   "id": "driver",
+   "label": "Driver",
+   "anchor": [
+    0.9214,
+    -0.6003,
+    1.8748
+   ],
+   "visible": true,
+   "targets": [
+    "/World/Bus/Geometry/Occupants/Human_TaiXe/Skin"
+   ],
+   "rule": "top of the face centres of Human_TaiXe_skin"
+  },
+  {
+   "id": "front_door",
+   "label": "Front door",
+   "anchor": [
+    0.8452,
+    1.18,
+    1.2414
+   ],
+   "visible": true,
+   "targets": [
+    "/World/Bus/Geometry/Doors/door_front"
+   ],
+   "rule": "bbox centre of the face centres of door_front"
+  },
+  {
+   "id": "middle_door",
+   "label": "Middle door",
+   "anchor": [
+    4.25,
+    1.18,
+    1.2414
+   ],
+   "visible": true,
+   "targets": [
+    "/World/Bus/Geometry/Doors/door_middle"
+   ],
+   "rule": "bbox centre of the face centres of door_middle"
+  },
+  {
+   "id": "rear",
+   "label": "Rear",
+   "anchor": [
+    8.55,
+    0.0005,
+    2.0755
+   ],
+   "visible": true,
+   "targets": [
+    "/World/Bus/Geometry/Windows/window_rear"
+   ],
+   "rule": "centroid of the face centres of window_rear"
+  },
+  {
+   "id": "air_vents",
+   "label": "Air vents",
+   "anchor": [
+    4.8288,
+    0.7299,
+    2.6
+   ],
+   "visible": true,
+   "targets": [
+    "/World/Bus/HVAC/Supply/inlet_supply_right"
+   ],
+   "rule": "centroid of the face centres of inlet_supply_right"
+  }
+ ],
+ "scenario": {
+  "occupantCount": 7,
+  "supplyTemperatureC": 18.0,
+  "outdoorTemperatureC": 35.0,
+  "solarLoadIncluded": true,
+  "analysis": "steady_rans",
+  "scenarioCount": 1,
+  "solver:iterations": 2100,
+  "caseId": "VinBus_V2_CoTaiXe_CoNang",
+  "supplyPatches": [
+   "/World/Bus/HVAC/Supply/inlet_driver_dash",
+   "/World/Bus/HVAC/Supply/inlet_driver_head",
+   "/World/Bus/HVAC/Supply/inlet_supply_left",
+   "/World/Bus/HVAC/Supply/inlet_supply_right"
+  ]
+ },
+ "results": {
+  "field_prim": "/World/Results/Field",
+  "variant_set": "source",
+  "variants": [
+   "cfd",
+   "pi",
+   "pn",
+   "vanilla"
+  ],
+  "authored_selection": "cfd",
+  "sources": {
+   "cfd": {
+    "label": "CFD reference",
+    "status": "available",
+    "available": true,
+    "kind": "cfd_reference",
+    "physics_scope": "STAR-CCM+ steady RANS solution (the reference)",
+    "selected_is_initial": null,
+    "selected_step": null,
+    "variant": "cfd"
+   },
+   "vanilla": {
+    "label": "Vanilla DeepONet",
+    "status": "available",
+    "available": true,
+    "kind": "neural_surrogate",
+    "physics_scope": "data loss only",
+    "selected_is_initial": false,
+    "selected_step": 8000,
+    "variant": "vanilla"
+   },
+   "pn": {
+    "label": "PN-DeepONet",
+    "status": "available",
+    "available": true,
+    "kind": "neural_surrogate",
+    "physics_scope": "data loss only",
+    "selected_is_initial": false,
+    "selected_step": 6500,
+    "variant": "pn"
+   },
+   "pi": {
+    "label": "PI-PN-DeepONet (continuity + BC informed)",
+    "status": "available",
+    "available": true,
+    "kind": "neural_surrogate",
+    "physics_scope": "data loss + compressible continuity + wall no-slip, return-velocity, inlet-T and leak-p boundary terms; RANS momentum and energy NOT included",
+    "selected_is_initial": true,
+    "selected_step": 0,
+    "variant": "pi"
+   }
+  },
+  "point_count": 67532,
+  "cloud_refs": {
+   "cfd": {
+    "T": "cloud/cfd_T.bin",
+    "speed": "cloud/cfd_speed.bin",
+    "p": "cloud/cfd_p.bin",
+    "u": "cloud/cfd_u.bin",
+    "v": "cloud/cfd_v.bin",
+    "w": "cloud/cfd_w.bin"
+   },
+   "pi": {
+    "T": "cloud/pi_T.bin",
+    "speed": "cloud/pi_speed.bin",
+    "p": "cloud/pi_p.bin",
+    "u": "cloud/pi_u.bin",
+    "v": "cloud/pi_v.bin",
+    "w": "cloud/pi_w.bin"
+   },
+   "pn": {
+    "T": "cloud/pn_T.bin",
+    "speed": "cloud/pn_speed.bin",
+    "p": "cloud/pn_p.bin",
+    "u": "cloud/pn_u.bin",
+    "v": "cloud/pn_v.bin",
+    "w": "cloud/pn_w.bin"
+   },
+   "vanilla": {
+    "T": "cloud/vanilla_T.bin",
+    "speed": "cloud/vanilla_speed.bin",
+    "p": "cloud/vanilla_p.bin",
+    "u": "cloud/vanilla_u.bin",
+    "v": "cloud/vanilla_v.bin",
+    "w": "cloud/vanilla_w.bin"
+   }
+  },
+  "parity": {
+   "cfd": {
+    "T": {
+     "identical": true,
+     "max_lsb_diff": 0,
+     "invalid_points": 0
+    },
+    "speed": {
+     "identical": true,
+     "max_lsb_diff": 0,
+     "invalid_points": 0
+    },
+    "p": {
+     "identical": true,
+     "max_lsb_diff": 0,
+     "invalid_points": 0
+    },
+    "u": {
+     "identical": true,
+     "max_lsb_diff": 0,
+     "invalid_points": 0
+    },
+    "v": {
+     "identical": true,
+     "max_lsb_diff": 0,
+     "invalid_points": 0
+    },
+    "w": {
+     "identical": true,
+     "max_lsb_diff": 0,
+     "invalid_points": 0
+    }
+   },
+   "pi": {
+    "T": {
+     "identical": true,
+     "max_lsb_diff": 0,
+     "invalid_points": 0
+    },
+    "speed": {
+     "identical": true,
+     "max_lsb_diff": 0,
+     "invalid_points": 0
+    },
+    "p": {
+     "identical": true,
+     "max_lsb_diff": 0,
+     "invalid_points": 0
+    },
+    "u": {
+     "identical": true,
+     "max_lsb_diff": 0,
+     "invalid_points": 0
+    },
+    "v": {
+     "identical": true,
+     "max_lsb_diff": 0,
+     "invalid_points": 0
+    },
+    "w": {
+     "identical": true,
+     "max_lsb_diff": 0,
+     "invalid_points": 0
+    }
+   },
+   "pn": {
+    "T": {
+     "identical": true,
+     "max_lsb_diff": 0,
+     "invalid_points": 0
+    },
+    "speed": {
+     "identical": true,
+     "max_lsb_diff": 0,
+     "invalid_points": 0
+    },
+    "p": {
+     "identical": true,
+     "max_lsb_diff": 0,
+     "invalid_points": 0
+    },
+    "u": {
+     "identical": true,
+     "max_lsb_diff": 0,
+     "invalid_points": 0
+    },
+    "v": {
+     "identical": true,
+     "max_lsb_diff": 0,
+     "invalid_points": 0
+    },
+    "w": {
+     "identical": true,
+     "max_lsb_diff": 0,
+     "invalid_points": 0
+    }
+   },
+   "vanilla": {
+    "T": {
+     "identical": true,
+     "max_lsb_diff": 0,
+     "invalid_points": 0
+    },
+    "speed": {
+     "identical": true,
+     "max_lsb_diff": 0,
+     "invalid_points": 0
+    },
+    "p": {
+     "identical": true,
+     "max_lsb_diff": 0,
+     "invalid_points": 0
+    },
+    "u": {
+     "identical": true,
+     "max_lsb_diff": 0,
+     "invalid_points": 0
+    },
+    "v": {
+     "identical": true,
+     "max_lsb_diff": 0,
+     "invalid_points": 0
+    },
+    "w": {
+     "identical": true,
+     "max_lsb_diff": 0,
+     "invalid_points": 0
+    }
+   }
+  },
+  "units": {
+   "temperatureC": "degC",
+   "flowVelocity": "m/s",
+   "speed": "m/s",
+   "pressureWorkingPa": "Pa (working pressure)"
+  }
+ },
+ "slices": [
+  {
+   "id": "h00",
+   "axis": "z",
+   "position_m": 0.55,
+   "status": "chosen_grid_position",
+   "asset_dir": "slices/h00/",
+   "matches_reference_renders": []
+  },
+  {
+   "id": "h01",
+   "axis": "z",
+   "position_m": 0.8,
+   "status": "chosen_grid_position",
+   "asset_dir": "slices/h01/",
+   "matches_reference_renders": []
+  },
+  {
+   "id": "h02",
+   "axis": "z",
+   "position_m": 1.1,
+   "status": "chosen_grid_position",
+   "asset_dir": "slices/h02/",
+   "matches_reference_renders": []
+  },
+  {
+   "id": "h03",
+   "axis": "z",
+   "position_m": 1.4,
+   "status": "chosen_grid_position",
+   "asset_dir": "slices/h03/",
+   "matches_reference_renders": []
+  },
+  {
+   "id": "h04",
+   "axis": "z",
+   "position_m": 1.7,
+   "status": "chosen_grid_position",
+   "asset_dir": "slices/h04/",
+   "matches_reference_renders": []
+  },
+  {
+   "id": "h05",
+   "axis": "z",
+   "position_m": 1.975,
+   "status": "estimated_from_reference_render",
+   "asset_dir": "slices/h05/",
+   "matches_reference_renders": [
+    "2aOboRAG7XJyyHNfu6WUQuYUc7Ub3esDI93XbRJo.jpg"
+   ]
+  },
+  {
+   "id": "h06",
+   "axis": "z",
+   "position_m": 2.0,
+   "status": "chosen_grid_position",
+   "asset_dir": "slices/h06/",
+   "matches_reference_renders": []
+  },
+  {
+   "id": "h07",
+   "axis": "z",
+   "position_m": 2.3,
+   "status": "chosen_grid_position",
+   "asset_dir": "slices/h07/",
+   "matches_reference_renders": []
+  },
+  {
+   "id": "h08",
+   "axis": "z",
+   "position_m": 2.55,
+   "status": "chosen_grid_position",
+   "asset_dir": "slices/h08/",
+   "matches_reference_renders": []
+  },
+  {
+   "id": "l00",
+   "axis": "y",
+   "position_m": -0.9,
+   "status": "chosen_grid_position",
+   "asset_dir": "slices/l00/",
+   "matches_reference_renders": []
+  },
+  {
+   "id": "l01",
+   "axis": "y",
+   "position_m": -0.5,
+   "status": "estimated_from_reference_render",
+   "asset_dir": "slices/l01/",
+   "matches_reference_renders": [
+    "2aOboRAG7XpFl7po4b8kDYDhGkv58O5ZI0VZuyAK.jpg"
+   ]
+  },
+  {
+   "id": "l02",
+   "axis": "y",
+   "position_m": -0.1,
+   "status": "chosen_grid_position",
+   "asset_dir": "slices/l02/",
+   "matches_reference_renders": []
+  },
+  {
+   "id": "l03",
+   "axis": "y",
+   "position_m": -0.05,
+   "status": "estimated_from_reference_render",
+   "asset_dir": "slices/l03/",
+   "matches_reference_renders": [
+    "2aOboRAG7XOUilfGmz2SVfp5qJuZo0tI6BgOGGY4.jpg"
+   ]
+  },
+  {
+   "id": "l04",
+   "axis": "y",
+   "position_m": 0.3,
+   "status": "chosen_grid_position",
+   "asset_dir": "slices/l04/",
+   "matches_reference_renders": []
+  },
+  {
+   "id": "l05",
+   "axis": "y",
+   "position_m": 0.7,
+   "status": "chosen_grid_position",
+   "asset_dir": "slices/l05/",
+   "matches_reference_renders": []
+  },
+  {
+   "id": "l06",
+   "axis": "y",
+   "position_m": 1.0,
+   "status": "chosen_grid_position",
+   "asset_dir": "slices/l06/",
+   "matches_reference_renders": []
+  },
+  {
+   "id": "t00",
+   "axis": "x",
+   "position_m": 0.5,
+   "status": "chosen_grid_position",
+   "asset_dir": "slices/t00/",
+   "matches_reference_renders": []
+  },
+  {
+   "id": "t01",
+   "axis": "x",
+   "position_m": 1.0,
+   "status": "chosen_grid_position",
+   "asset_dir": "slices/t01/",
+   "matches_reference_renders": []
+  },
+  {
+   "id": "t02",
+   "axis": "x",
+   "position_m": 1.5,
+   "status": "chosen_grid_position",
+   "asset_dir": "slices/t02/",
+   "matches_reference_renders": []
+  },
+  {
+   "id": "t03",
+   "axis": "x",
+   "position_m": 2.0,
+   "status": "chosen_grid_position",
+   "asset_dir": "slices/t03/",
+   "matches_reference_renders": []
+  },
+  {
+   "id": "t04",
+   "axis": "x",
+   "position_m": 2.5,
+   "status": "chosen_grid_position",
+   "asset_dir": "slices/t04/",
+   "matches_reference_renders": []
+  },
+  {
+   "id": "t05",
+   "axis": "x",
+   "position_m": 3.0,
+   "status": "chosen_grid_position",
+   "asset_dir": "slices/t05/",
+   "matches_reference_renders": []
+  },
+  {
+   "id": "t06",
+   "axis": "x",
+   "position_m": 3.5,
+   "status": "chosen_grid_position",
+   "asset_dir": "slices/t06/",
+   "matches_reference_renders": []
+  },
+  {
+   "id": "t07",
+   "axis": "x",
+   "position_m": 4.0,
+   "status": "chosen_grid_position",
+   "asset_dir": "slices/t07/",
+   "matches_reference_renders": []
+  },
+  {
+   "id": "t08",
+   "axis": "x",
+   "position_m": 4.5,
+   "status": "chosen_grid_position",
+   "asset_dir": "slices/t08/",
+   "matches_reference_renders": []
+  },
+  {
+   "id": "t09",
+   "axis": "x",
+   "position_m": 5.0,
+   "status": "estimated_from_reference_render",
+   "asset_dir": "slices/t09/",
+   "matches_reference_renders": [
+    "2aOboRAG7Xc6psOoS2KkQdOkOqVWM1ljdij4ZyfQ.jpg",
+    "2aOboRAG7XFmgMd72t036qTbIHWYs1baninE1q40.jpg"
+   ]
+  },
+  {
+   "id": "t10",
+   "axis": "x",
+   "position_m": 5.5,
+   "status": "chosen_grid_position",
+   "asset_dir": "slices/t10/",
+   "matches_reference_renders": []
+  },
+  {
+   "id": "t11",
+   "axis": "x",
+   "position_m": 6.0,
+   "status": "chosen_grid_position",
+   "asset_dir": "slices/t11/",
+   "matches_reference_renders": []
+  },
+  {
+   "id": "t12",
+   "axis": "x",
+   "position_m": 6.5,
+   "status": "chosen_grid_position",
+   "asset_dir": "slices/t12/",
+   "matches_reference_renders": []
+  },
+  {
+   "id": "t13",
+   "axis": "x",
+   "position_m": 7.0,
+   "status": "chosen_grid_position",
+   "asset_dir": "slices/t13/",
+   "matches_reference_renders": []
+  },
+  {
+   "id": "t14",
+   "axis": "x",
+   "position_m": 7.5,
+   "status": "chosen_grid_position",
+   "asset_dir": "slices/t14/",
+   "matches_reference_renders": []
+  },
+  {
+   "id": "t15",
+   "axis": "x",
+   "position_m": 8.0,
+   "status": "chosen_grid_position",
+   "asset_dir": "slices/t15/",
+   "matches_reference_renders": []
+  }
+ ],
+ "probes": [
+  {
+   "id": "driver_head",
+   "path": "/World/Probes/driver_head",
+   "label": "Near the driver's head",
+   "position": [
+    0.95,
+    -0.3,
+    1.75
+   ],
+   "query": "nearest_interior_cell",
+   "is_sensor": false,
+   "result": [
+    "/World/Results/Field"
+   ],
+   "visible": true,
+   "valid": true,
+   "distance_m": 0.022000058189031703,
+   "cell_position": [
+    0.9364352610745365,
+    -0.313220155049006,
+    1.7388094719210827
+   ],
+   "reason": null,
+   "values": {
+    "cfd": {
+     "T": 22.98917594544849,
+     "speed": 0.3176555492702465,
+     "p": 15.712653534054638,
+     "u": 0.0991625106547377,
+     "v": -0.0271418036058195,
+     "w": -0.3005580924877155
+    },
+    "vanilla": {
+     "T": 22.644622802734375,
+     "speed": 0.35957368927946876,
+     "p": 15.65293025970459,
+     "u": 0.07218724489212036,
+     "v": -0.03598928451538086,
+     "w": -0.35040977597236633
+    },
+    "pn": {
+     "T": 23.021093368530273,
+     "speed": 0.37029032457264116,
+     "p": 15.677841186523438,
+     "u": 0.08573345839977264,
+     "v": -0.031063765287399292,
+     "w": -0.35888680815696716
+    },
+    "pi": {
+     "T": 23.021093368530273,
+     "speed": 0.37029032457264116,
+     "p": 15.677841186523438,
+     "u": 0.08573345839977264,
+     "v": -0.031063765287399292,
+     "w": -0.35888680815696716
+    }
+   },
+   "cache": "stage",
+   "method": "nearest exported CFD sample; valid only if Interior and <= 0.15 m away; no interpolation"
+  },
+  {
+   "id": "aisle_front",
+   "path": "/World/Probes/aisle_front",
+   "label": "Front aisle, seated head height",
+   "position": [
+    2.2,
+    0.0,
+    1.4
+   ],
+   "query": "nearest_interior_cell",
+   "is_sensor": false,
+   "result": [
+    "/World/Results/Field"
+   ],
+   "visible": true,
+   "valid": true,
+   "distance_m": 0.09648927887477071,
+   "cell_position": [
+    2.149819175126135,
+    0.00359104729957,
+    1.3176642839829276
+   ],
+   "reason": null,
+   "values": {
+    "cfd": {
+     "T": 22.782125926381468,
+     "speed": 0.3041853706388733,
+     "p": 15.766979990494592,
+     "u": 0.1151142671712688,
+     "v": 0.1306396372807354,
+     "w": -0.2494207897820234
+    },
+    "vanilla": {
+     "T": 21.903406143188477,
+     "speed": 0.17297078637726299,
+     "p": 15.818894386291504,
+     "u": 0.06676219403743744,
+     "v": 0.13871833682060242,
+     "w": -0.07886016368865967
+    },
+    "pn": {
+     "T": 22.616262435913086,
+     "speed": 0.26371177396094503,
+     "p": 15.76123046875,
+     "u": 0.09260526299476624,
+     "v": 0.15964919328689575,
+     "w": -0.18836215138435364
+    },
+    "pi": {
+     "T": 22.616262435913086,
+     "speed": 0.26371177396094503,
+     "p": 15.76123046875,
+     "u": 0.09260526299476624,
+     "v": 0.15964919328689575,
+     "w": -0.18836215138435364
+    }
+   },
+   "cache": "stage",
+   "method": "nearest exported CFD sample; valid only if Interior and <= 0.15 m away; no interpolation"
+  },
+  {
+   "id": "middle_door",
+   "path": "/World/Probes/middle_door",
+   "label": "By the middle door, 1.1 m high",
+   "position": [
+    4.25,
+    0.85,
+    1.1
+   ],
+   "query": "nearest_interior_cell",
+   "is_sensor": false,
+   "result": [
+    "/World/Results/Field"
+   ],
+   "visible": true,
+   "valid": true,
+   "distance_m": 0.054919467697842624,
+   "cell_position": [
+    4.2053029419669965,
+    0.8240583061299976,
+    1.0814164197592666
+   ],
+   "reason": null,
+   "values": {
+    "cfd": {
+     "T": 21.681704411845654,
+     "speed": 0.1933325540260927,
+     "p": 15.800867222322106,
+     "u": -0.1406180207282627,
+     "v": 0.0755366102754849,
+     "w": 0.1090791877527854
+    },
+    "vanilla": {
+     "T": 21.410659790039062,
+     "speed": 0.18678807696907845,
+     "p": 15.830546379089355,
+     "u": -0.15617674589157104,
+     "v": 0.03634046018123627,
+     "w": 0.09580177813768387
+    },
+    "pn": {
+     "T": 21.55377769470215,
+     "speed": 0.16769904268783536,
+     "p": 15.822084426879883,
+     "u": -0.14808209240436554,
+     "v": 0.047700271010398865,
+     "w": 0.06260468810796738
+    },
+    "pi": {
+     "T": 21.55377769470215,
+     "speed": 0.16769904268783536,
+     "p": 15.822084426879883,
+     "u": -0.14808209240436554,
+     "v": 0.047700271010398865,
+     "w": 0.06260468810796738
+    }
+   },
+   "cache": "stage",
+   "method": "nearest exported CFD sample; valid only if Interior and <= 0.15 m away; no interpolation"
+  },
+  {
+   "id": "rear_seat",
+   "path": "/World/Probes/rear_seat",
+   "label": "Next to the rear seated passenger",
+   "position": [
+    7.5,
+    0.6,
+    1.5
+   ],
+   "query": "nearest_interior_cell",
+   "is_sensor": false,
+   "result": [
+    "/World/Results/Field"
+   ],
+   "visible": true,
+   "valid": true,
+   "distance_m": 0.01232625778059161,
+   "cell_position": [
+    7.500267488258907,
+    0.6067669677448154,
+    1.5102991858146928
+   ],
+   "reason": null,
+   "values": {
+    "cfd": {
+     "T": 22.48826235022227,
+     "speed": 0.0238734872602543,
+     "p": 15.765398024848324,
+     "u": -0.0011382583285089,
+     "v": 0.0114006594885905,
+     "w": -0.0209445153958815
+    },
+    "vanilla": {
+     "T": 21.996431350708008,
+     "speed": 0.21974557515396276,
+     "p": 15.809517860412598,
+     "u": -0.006903745234012604,
+     "v": 0.1682450771331787,
+     "w": -0.14118799567222595
+    },
+    "pn": {
+     "T": 22.364938735961914,
+     "speed": 0.1358441966748535,
+     "p": 15.841850280761719,
+     "u": -0.00555960088968277,
+     "v": 0.046534761786460876,
+     "w": -0.12750393152236938
+    },
+    "pi": {
+     "T": 22.364938735961914,
+     "speed": 0.1358441966748535,
+     "p": 15.841850280761719,
+     "u": -0.00555960088968277,
+     "v": 0.046534761786460876,
+     "w": -0.12750393152236938
+    }
+   },
+   "cache": "stage",
+   "method": "nearest exported CFD sample; valid only if Interior and <= 0.15 m away; no interpolation"
+  }
+ ],
+ "probes_recomputed": [],
+ "preview_package": "usd/bus_scene_preview.usdz"
+}

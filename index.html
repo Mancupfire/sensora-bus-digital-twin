@@ -52,11 +52,11 @@
       <aside class="side glass" aria-label="Controls">
         <section class="scenario" aria-labelledby="scn-h">
           <h2 id="scn-h">The scenario</h2>
-          <ul class="scn">
-            <li><span class="ic" aria-hidden="true">👥</span><span><b>7</b> occupants</span></li>
-            <li><span class="ic" aria-hidden="true">❄</span><span>Supply air <b>18 °C</b></span></li>
-            <li><span class="ic" aria-hidden="true">☀</span><span>Outdoor <b>35 °C</b></span></li>
-            <li><span class="ic" aria-hidden="true">◐</span><span>Solar heating included</span></li>
+          <ul class="scn" id="scn-list">
+            <li><span class="ic" aria-hidden="true">👥</span><span><b data-scn="occupantCount">7</b> occupants</span></li>
+            <li><span class="ic" aria-hidden="true">❄</span><span>Supply air <b><span data-scn="supplyTemperatureC">18</span> °C</b></span></li>
+            <li><span class="ic" aria-hidden="true">☀</span><span>Outdoor <b><span data-scn="outdoorTemperatureC">35</span> °C</b></span></li>
+            <li data-scn-li="solarLoadIncluded"><span class="ic" aria-hidden="true">◐</span><span>Solar heating included</span></li>
           </ul>
           <p class="small muted">One simulated scenario · precomputed CFD and AI predictions.</p>
         </section>
@@ -88,9 +88,14 @@
           <output id="ex-pos-out" class="small" for="ex-pos"></output>
         </fieldset>
         <p class="tip"><span aria-hidden="true">👆</span> Click inside the coloured slice to inspect a location.</p>
+        <div class="saved" id="saved-wrap" hidden>
+          <div class="saved-h">Saved locations</div>
+          <div class="saved-list" id="saved-list"></div>
+        </div>
         <details class="ctl more">
           <summary>More display options</summary>
           <label class="chk"><input type="checkbox" id="ex-labels" checked> Labels</label>
+          <label class="chk"><input type="checkbox" data-exlayer="body" checked> Bus body (walls, windows, doors, roof)</label>
           <label class="chk"><input type="checkbox" data-exlayer="occupants" checked> People</label>
           <label class="chk"><input type="checkbox" data-exlayer="seats" checked> Seats</label>
           <label class="chk"><input type="checkbox" data-exlayer="hvac" checked> Air vents and openings</label>
@@ -137,6 +142,7 @@
       <button type="button" class="sub-btn" data-sub="results" aria-pressed="true">Results &amp; metrics</button>
       <button type="button" class="sub-btn" data-sub="explorer" aria-pressed="false">Error explorer</button>
       <button type="button" class="sub-btn" data-sub="curves" aria-pressed="false">Learning curves</button>
+      <button type="button" class="sub-btn" data-sub="scene" aria-pressed="false">Scene architecture</button>
       <button type="button" class="sub-btn" data-sub="methods" aria-pressed="false">Methods, provenance &amp; limits</button>
     </nav>
 
@@ -260,6 +266,12 @@
       </select>
       <figure class="glass curve-fig"><canvas id="curve-canvas" width="1000" height="420" aria-label="Validation learning curves"></canvas>
         <figcaption id="curve-cap"></figcaption></figure>
+    </section>
+
+    <!-- scene architecture (OpenUSD) -->
+    <section class="tsub page-inner" data-sub="scene" id="t-scene" hidden>
+      <h1>Scene architecture</h1>
+      <div id="scene-body"><p class="muted">Loading…</p></div>
     </section>
 
     <!-- methods -->

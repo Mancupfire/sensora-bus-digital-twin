@@ -2,7 +2,7 @@
 // simple controls, a location readout, and an optional panel comparing the AI predictions.
 // Every value comes from data/ (stored CFD values or stored model predictions); nothing is computed live
 // except colours, arrows and the nearest-cell lookup.
-import { sliceData, sliceField, rawBin, bin, dequantXYZ, sourceAvailable, hasAsset } from './data.js';
+import { sliceData, sliceField, bin, dequantXYZ, sourceAvailable, getScene, sceneBin } from './data.js';
 import { colorOf, drawColorbar, fmt, mapFor } from './colormap.js';
 import { sliceImage, SlicePanel } from './slice2d.js';
 
@@ -21,8 +21,10 @@ const LABEL_BIAS = { driver: [-0.3, -1], front_door: [-0.2, 1], middle_door: [0,
 export function initExplore({ M, MET }) {
   const E = { v: 'T', look: 'exterior', started: false, orient: 'horizontal', idx: {}, probe: null, src: 'cfd',
     labels: true, arrows: false, arrowsTouched: false, compare: false,
-    layers: { cabin_shell: true, seats: true, occupants: true, hvac: true, slice: true, arrows: true } };
+    layers: { body: true, floor: true, cabin_shell: true, seats: true, occupants: true, hvac: true, slice: true, arrows: true }, saved: null };
   const sens = window.__sensora; sens.E = E; sens.exRenders = 0;
+  { const t = document.createElement('canvas'); E.noGL = !(t.getContext('webgl2') || t.getContext('webgl')); sens.exNoGL = E.noGL;
+    if (E.noGL) document.querySelector('#stage').classList.add('nogl'); }
   let viewer = null, building = null, token = 0, cmpPanels = [], active = false;
 
   const slicesOf = (o) => M.slices.filter((s) => s.orientation === o);
@@ -33,7 +35,14 @@ export function initExplore({ M, MET }) {
   }
   const cur = () => { const l = slicesOf(E.orient); return l[Math.min(E.idx[E.orient], l.length - 1)]; };
   const status = (t) => { $('#ex-status').textContent = t || ''; };
-  const srcLabel = (s) => (s === 'cfd' ? 'CFD simulation (reference)' : M.models[s].label);
+  // scene description exported from the OpenUSD stage (null -> fallback to the manifest / point clouds)
+  const SC = getScene(); sens.scene = SC;
+  const srcLabel = (s) => (s === 'cfd' ? 'CFD simulation (reference)' : (SC && SC.results.sources[s] ? SC.results.sources[s].label : M.models[s].label));
+  // a model is shown only if its stored predictions exist AND the stage lists it as available; never substituted
+  const avail = (s) => s === 'cfd' || (sourceAvailable(s) && (!SC || (SC.results.sources[s] && SC.results.sources[s].available)));
+  // the variant selected in usd/layers/results.usda decides which source the 3D slice shows first (default: cfd)
+  if (SC && SOURCES.includes(SC.results.authored_selection) && avail(SC.results.authored_selection)) E.src = SC.results.authored_selection;
+  E.defaultSrc = E.src;
   const short = (s) => ({ cfd: 'CFD reference', vanilla: 'Vanilla DeepONet', pn: 'PN-DeepONet', pi: 'PI-PN-DeepONet' }[s]);
 
   // ---------------------------------------------------------------- words for places
@@ -94,9 +103,9 @@ export function initExplore({ M, MET }) {
   function setCompare(on) {
     E.compare = on; $('#compare').hidden = !on; $('#btn-compare').setAttribute('aria-expanded', String(on));
     $('#btn-compare').textContent = on ? 'Hide AI comparison' : 'Compare AI predictions';
-    if (!on && E.src !== 'cfd') { E.src = 'cfd'; }
+    if (!on && E.src !== E.defaultSrc) { E.src = E.defaultSrc; }
     if (on) start();
-    sync(); draw().then(() => { if (on) $('#compare').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' }); });
+    syncSaved(); sync(); draw().then(() => { if (on) $('#compare').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' }); });
   }
 
   function sync() {
@@ -115,7 +124,8 @@ export function initExplore({ M, MET }) {
   function writeHash() {
     if (!active) return;
     const q = new URLSearchParams({ var: E.v, look: E.look, cut: E.orient, pos: String(E.idx[E.orient]) });
-    if (E.src !== 'cfd') q.set('src', E.src); if (E.compare) q.set('compare', '1'); if (!E.started) q.set('intro', '1');
+    if (E.src !== E.defaultSrc) q.set('src', E.src); if (E.compare) q.set('compare', '1'); if (!E.started) q.set('intro', '1');
+    if (E.saved) q.set('saved', E.saved);
     history.replaceState(null, '', `#explore?${q}`);
   }
   function readQuery(q) {
@@ -125,6 +135,7 @@ export function initExplore({ M, MET }) {
     if (q.has('pos')) E.idx[E.orient] = Math.max(0, Math.min(slicesOf(E.orient).length - 1, +q.get('pos') || 0));
     if (SOURCES.includes(q.get('src'))) E.src = q.get('src');
     if (q.get('compare') === '1') E.compare = true;
+    if (q.get('saved') && SC && SC.probes.some((p) => p.id === q.get('saved'))) E.saved = q.get('saved');
     if (!q.has('intro') && (q.has('look') || q.has('var'))) E.started = true;
     if (E.v === 'speed') E.arrows = true;
   }
@@ -135,15 +146,30 @@ export function initExplore({ M, MET }) {
     if (building) return building;
     building = (async () => {
       status('Loading the bus model…');
+      const t = document.createElement('canvas');
+      if (!(t.getContext('webgl2') || t.getContext('webgl'))) {
+        E.noGL = true; sens.exNoGL = true; $('#stage').classList.add('nogl');
+        throw new Error('the 3D view needs WebGL, which is turned off or unavailable in this browser. The slice maps under "Compare AI predictions" and the Technical details still work');
+      }
       const { Viewer3D } = await import('./viewer3d.js');
       const v = new Viewer3D($('#stage3d'), M, { initialView: 'oblique', background: 0x0d1a33 });
       v.layers = { ...E.layers, slice: E.started && E.layers.slice };
       v.look = E.look;
       try {
-        if (M.display_mesh && hasAsset(M.display_mesh.file)) v.addDisplayMesh(await rawBin(M.display_mesh.file), M.display_mesh);
-        else for (const [g, meta] of Object.entries(M.geometry)) v.addGroup(g, dequantXYZ(await bin(meta.file, Int16Array)));
+        if (SC) {
+          v.setCameras(SC.cameras, SC.default_camera);
+          v.addSceneGeometry(await sceneBin(SC.geometry.file), SC);
+          // USD visibility sets the DEFAULT of each toggle: a group hidden in the presentation layer starts unchecked
+          for (const layer of ['body', 'seats', 'occupants', 'hvac']) {
+            const ms = v.meshes.filter((m) => m.userData.layer === layer);
+            if (ms.length && ms.every((m) => m.userData.usdHidden)) {
+              ms.forEach((m) => { m.userData.usdHidden = false; }); E.layers[layer] = false; v.layers[layer] = false;
+              const c = document.querySelector(`[data-exlayer="${layer}"]`); if (c) c.checked = false;
+            }
+          }
+        } else for (const [g, meta] of Object.entries(M.geometry)) v.addGroup(g, dequantXYZ(await bin(meta.file, Int16Array)));
       } catch (e) { building = null; v.renderer.domElement.remove(); throw new Error(`could not load the bus geometry (${e.message}). Check the connection and reload the page`); }
-      v.onProbe = (p) => { if (p.kind === 'slice') setProbe({ q: p.q, r: p.r }); };
+      v.onProbe = (p) => { if (p.kind === 'slice') { E.saved = null; syncSaved(); setProbe({ q: p.q, r: p.r }); } };
       v.onRender = placeLabels;
       viewer = v; sens.exViewer = v; buildLabels(); v.setLook(E.look); applyShift(); v.resetCamera();
       status('');
@@ -156,7 +182,7 @@ export function initExplore({ M, MET }) {
   let labelEls = [];
   function buildLabels() {
     const host = $('#labels'); host.innerHTML = ''; labelEls = [];
-    for (const lm of M.landmarks || []) {
+    for (const lm of (SC ? SC.labels.filter((l) => l.visible) : (M.landmarks || []))) {
       const dot = document.createElement('span'); dot.className = 'lm-dot';
       const line = document.createElement('span'); line.className = 'lm-line';
       const txt = document.createElement('span'); txt.className = 'lm-text'; txt.textContent = lm.label; txt.dataset.lm = lm.id;
@@ -198,11 +224,12 @@ export function initExplore({ M, MET }) {
   async function draw() {
     if (!active) return;
     const my = ++token; sync(); writeHash();
+    if (E.noGL) { status('3D view unavailable: WebGL is turned off in this browser. Use “Compare AI predictions” for slice maps.'); if (E.compare && E.started) { const sl = cur(); await renderCompare(sl, await sliceData(sl.id)); } sens.exRenders++; return; }
     try {
       await ensureViewer();
       if (!E.started) { viewer.setLayerVisible('slice', false); viewer.setArrows(null); viewer.setProbeMarker(null); renderLegend(); renderLocation(null); sens.exRenders++; return; }
       const sl = cur();
-      if (E.src !== 'cfd' && !sourceAvailable(E.src)) throw new Error(`${short(E.src)} is unavailable; no other field is substituted`);
+      if (E.src !== 'cfd' && !avail(E.src)) throw new Error(`${short(E.src)} is unavailable; no other field is substituted`);
       status(`Loading ${VAR[E.v].name.toLowerCase()}…`);
       const sd = await sliceData(sl.id); const vals = await sliceField(sl.id, E.src, E.v);
       if (my !== token) return;
@@ -212,7 +239,7 @@ export function initExplore({ M, MET }) {
       viewer.setArrows(E.arrows ? await arrows(sl, sd) : null);
       if (my !== token) return;
       sens.exLast = { sliceId: sl.id, src: E.src, v: E.v, n: vals.length, vals };
-      renderLegend(); await renderLocation(sl, sd);
+      renderLegend(); if (E.saved && SC) renderSaved(); else await renderLocation(sl, sd);
       if (E.compare) await renderCompare(sl, sd);
       status('');
       sens.exRenders++;
@@ -257,7 +284,7 @@ export function initExplore({ M, MET }) {
   }
 
   // ---------------------------------------------------------------- location readout
-  function setProbe(p) { E.probe = p; renderLocation(cur()); if (E.compare) renderCompareMarkers(); }
+  function setProbe(p) { E.probe = p; E.saved = null; syncSaved(); renderLocation(cur()); if (E.compare) renderCompareMarkers(); }
   async function probeAt(sl, sd, p) {
     const g = sl.grid; const k = sd.index[p.r * g.nx + p.q];
     const plane = [0, 0, 0]; const ax = { x: 0, y: 1, z: 2 };
@@ -265,19 +292,20 @@ export function initExplore({ M, MET }) {
     if (k === 65535) return { nodata: true, plane };
     const xyz = [sd.xyz[3 * k], sd.xyz[3 * k + 1], sd.xyz[3 * k + 2]];
     const vals = {};
-    for (const s of SOURCES) if (s === 'cfd' || sourceAvailable(s)) vals[s] = { T: (await sliceField(sl.id, s, 'T'))[k], speed: (await sliceField(sl.id, s, 'speed'))[k] };
+    for (const s of SOURCES) if (s === 'cfd' || avail(s)) vals[s] = { T: (await sliceField(sl.id, s, 'T'))[k], speed: (await sliceField(sl.id, s, 'speed'))[k] };
     return { plane, xyz, gid: sd.gid[k], split: sd.split[k], vals, dist: Math.hypot(xyz[0] - plane[0], xyz[1] - plane[1], xyz[2] - plane[2]) };
   }
   async function renderLocation(sl, sd) {
     const box = $('#loc-body');
     if (!sl || !E.probe) {
       if (viewer) viewer.setProbeMarker(null);
+      if (E.noGL) { box.innerHTML = '<p class="muted">The 3D view is unavailable in this browser. Open “Compare AI predictions” and click a slice map to inspect a location.</p>'; sens.exProbe = null; return; }
       box.innerHTML = `<p class="muted">${E.started ? 'Click inside the coloured slice to see the temperature and airflow at that spot.' : 'Press “Explore inside”, then click the coloured slice to inspect a location.'}</p>`;
       sens.exProbe = null; return;
     }
     sd = sd || await sliceData(sl.id);
     const p = await probeAt(sl, sd, E.probe); sens.exProbe = p;
-    viewer.setProbeMarker(p.plane);
+    if (viewer) viewer.setProbeMarker(p.plane);
     if (p.nodata) {
       box.innerHTML = `<p><b>No air at this spot.</b> This point is inside a solid (seat, person or wall) or outside the cabin, so no value is shown.</p>`;
       return;
@@ -285,7 +313,7 @@ export function initExplore({ M, MET }) {
     const [x, y, z] = p.plane; const s = E.src; const v = p.vals[s];
     const where = `${along(x)} · ${side(y)} · ${heightTxt(z)}`;
     const cmpRows = E.compare ? `<table class="kv loc-cmp"><tr><th>At this location</th><th>Temperature</th><th>Airflow speed</th><th>difference from CFD</th></tr>${SOURCES.map((k) => {
-      if (k !== 'cfd' && !sourceAvailable(k)) return `<tr><td>${short(k)}</td><td colspan="3">unavailable</td></tr>`;
+      if (k !== 'cfd' && !avail(k)) return `<tr><td>${short(k)}</td><td colspan="3">unavailable</td></tr>`;
       const d = k === 'cfd' ? '—' : `${fmtS(p.vals[k].T - p.vals.cfd.T, 1)} °C · ${fmtS(p.vals[k].speed - p.vals.cfd.speed, 2)} m/s`;
       return `<tr${k === s ? ' class="sel"' : ''}><td>${short(k)}</td><td>${p.vals[k].T.toFixed(1)} °C</td><td>${p.vals[k].speed.toFixed(2)} m/s</td><td>${d}</td></tr>`;
     }).join('')}</table>` : '';
@@ -299,12 +327,48 @@ export function initExplore({ M, MET }) {
   }
   const fmtS = (x, d) => `${x >= 0 ? '+' : '−'}${Math.abs(x).toFixed(d)}`;
 
+  // ---------------------------------------------------------------- scenario card + saved locations (from the stage)
+  if (SC) {
+    const sc = SC.scenario;
+    for (const el of document.querySelectorAll('[data-scn]')) { const v = sc[el.dataset.scn]; if (v !== null && v !== undefined) el.textContent = String(Math.round(v * 10) / 10); }
+    const sol = document.querySelector('[data-scn-li="solarLoadIncluded"]'); if (sol) sol.hidden = !sc.solarLoadIncluded;
+    const probes = SC.probes.filter((p) => p.visible !== false);
+    if (probes.length) {
+      $('#saved-wrap').hidden = false;
+      for (const p of probes) {
+        const b = document.createElement('button'); b.type = 'button'; b.dataset.probe = p.id; b.textContent = p.label; b.setAttribute('aria-pressed', 'false');
+        b.addEventListener('click', () => { E.saved = p.id; E.probe = null; start(); syncSaved(); draw(); });
+        $('#saved-list').append(b);
+      }
+    }
+  }
+  function syncSaved() { document.querySelectorAll('#saved-list button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.probe === E.saved))); }
+  function renderSaved() {
+    const p = SC.probes.find((x) => x.id === E.saved); const box = $('#loc-body'); sens.exSaved = p;
+    if (viewer) viewer.setProbeMarker(p.position);
+    const [x, y, z] = p.position;
+    const head = `<div class="loc-where"><div class="k">Saved location</div><div class="v">${p.label}</div><div class="small muted">${along(x)} · ${side(y)} · ${heightTxt(z)} · x ${x.toFixed(2)} m · y ${y.toFixed(2)} m · z ${z.toFixed(2)} m</div></div>`;
+    if (!p.valid) { box.innerHTML = `<div class="loc-grid">${head}<div class="loc-src"><div class="k">Value</div><div class="v">Unavailable</div><div class="small">${p.reason || 'no simulated air cell near this point'}. No value is shown.</div></div></div>`; return; }
+    const s = E.src; const v = p.values[s];
+    const cmpRows = E.compare ? `<table class="kv loc-cmp"><tr><th>At this location</th><th>Temperature</th><th>Airflow speed</th><th>difference from CFD</th></tr>${SOURCES.map((k) => {
+      if (!p.values[k] || !avail(k)) return `<tr><td>${short(k)}</td><td colspan="3">unavailable</td></tr>`;
+      const d = k === 'cfd' ? '—' : `${fmtS(p.values[k].T - p.values.cfd.T, 1)} °C · ${fmtS(p.values[k].speed - p.values.cfd.speed, 2)} m/s`;
+      return `<tr${k === s ? ' class="sel"' : ''}><td>${short(k)}</td><td>${p.values[k].T.toFixed(1)} °C</td><td>${p.values[k].speed.toFixed(2)} m/s</td><td>${d}</td></tr>`;
+    }).join('')}</table>` : '';
+    box.innerHTML = `<div class="loc-grid">${head}
+      <div class="loc-val"><div class="k">Temperature</div><div class="big">${v ? v.T.toFixed(1) : '—'} <span>°C</span></div></div>
+      <div class="loc-val"><div class="k">Airflow speed</div><div class="big">${v ? v.speed.toFixed(2) : '—'} <span>m/s</span></div></div>
+      <div class="loc-src"><div class="k">Source</div><div class="v">${s === 'cfd' ? 'CFD simulation (reference values)' : `${srcLabel(s)} — AI prediction`}</div>
+        <div class="small"><b>Estimated at this location</b>: value of the nearest simulated cell, ${(p.distance_m * 100).toFixed(1)} cm from this point (no interpolation). Precomputed; not a sensor reading.</div></div>
+    </div>${cmpRows}`;
+  }
+
   // ---------------------------------------------------------------- AI comparison panel
   const srcBox = $('#cmp-src');
   srcBox.innerHTML = '<span class="small muted">Show on the 3D slice:</span>';
   for (const s of SOURCES) {
     const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'radio'); b.dataset.src = s;
-    const ok = s === 'cfd' || sourceAvailable(s); b.textContent = short(s) + (ok ? '' : ' (unavailable)');
+    const ok = s === 'cfd' || avail(s); b.textContent = short(s) + (ok ? '' : ' (unavailable)');
     if (!ok) { b.disabled = true; b.title = `${short(s)}: ${M.models[s].status.replace('_', ' ')}. No other model is substituted.`; }
     b.addEventListener('click', () => { if (!ok) return; E.src = s; sync(); draw(); });
     srcBox.append(b);
@@ -319,7 +383,7 @@ export function initExplore({ M, MET }) {
     const sel = MET.selection || {};
     for (const s of SOURCES) {
       const card = document.createElement('article'); card.className = 'cmp-card'; card.dataset.src = s;
-      const ok = s === 'cfd' || sourceAvailable(s);
+      const ok = s === 'cfd' || avail(s);
       const head = document.createElement('div'); head.className = 'cmp-card-head';
       head.innerHTML = `<h3>${s === 'cfd' ? 'CFD reference' : M.models[s].label}</h3><span class="st ${s === 'cfd' ? 'ref' : M.models[s].status}">${s === 'cfd' ? 'simulation' : ok ? 'AI prediction' : 'unavailable'}</span>`;
       card.append(head);
@@ -352,7 +416,7 @@ export function initExplore({ M, MET }) {
   let artefact = null;
   async function renderArtefact() {
     const box = $('#cmp-artefact');
-    if (!sourceAvailable('pn')) { box.hidden = true; return; }
+    if (!avail('pn')) { box.hidden = true; return; }
     if (!artefact) {
       const hs = slicesOf('horizontal'); let i = 0; hs.forEach((s, j) => { if (Math.abs(s.value - 2.0) < Math.abs(hs[i].value - 2.0)) i = j; });
       const sl = hs[i]; const sd = await sliceData(sl.id); const cfd = await sliceField(sl.id, 'cfd', 'T'), pn = await sliceField(sl.id, 'pn', 'T');
@@ -365,7 +429,7 @@ export function initExplore({ M, MET }) {
     }
     const a = artefact;
     box.hidden = false;
-    box.innerHTML = `<b>Known model error, shown as is.</b> PN-DeepONet${sourceAvailable('pi') && (MET.selection?.pi?.selected_is_initial) ? ' (and therefore PI-PN)' : ''} predicts a warm patch near the ceiling about 2.4–3.3 m from the front, at z = ${a.sl.value.toFixed(2)} m, that the CFD does not show: up to ${fmtS(a.mx, 1)} °C on this slice. ${a.held} of the ${a.n} slice cells there with an error above 2 °C lie in regions hidden from training. <button type="button" class="btn small-btn" id="btn-artefact">Show this slice with PN</button>`;
+    box.innerHTML = `<b>Known model error, shown as is.</b> PN-DeepONet${avail('pi') && (MET.selection?.pi?.selected_is_initial) ? ' (and therefore PI-PN)' : ''} predicts a warm patch near the ceiling about 2.4–3.3 m from the front, at z = ${a.sl.value.toFixed(2)} m, that the CFD does not show: up to ${fmtS(a.mx, 1)} °C on this slice. ${a.held} of the ${a.n} slice cells there with an error above 2 °C lie in regions hidden from training. <button type="button" class="btn small-btn" id="btn-artefact">Show this slice with PN</button>`;
     $('#btn-artefact').addEventListener('click', () => { E.orient = 'horizontal'; E.idx.horizontal = a.idx; E.v = 'T'; E.src = 'pn'; E.probe = null; sync(); draw().then(() => $('#stage').scrollIntoView({ block: 'start' })); });
   }
 
