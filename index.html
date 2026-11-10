@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sensora · Explore the Bus Cabin</title>
+<meta name="description" content="Explore temperature and airflow inside a simulated bus cabin. One simulated scenario, precomputed CFD and AI predictions.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b1730'/%3E%3Crect x='5' y='10' width='22' height='12' rx='3' fill='none' stroke='%2322d3ee' stroke-width='2.4'/%3E%3Ccircle cx='11' cy='24' r='2.2' fill='%23fb923c'/%3E%3Ccircle cx='22' cy='24' r='2.2' fill='%23fb923c'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/app.css">
+<script type="importmap">{"imports": {"three": "./vendor/three/three.module.min.js"}}</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar" role="banner">
+  <div class="brand"><span class="logo" aria-hidden="true"></span><span>Sensora <span class="dot">·</span> <b>Explore the Bus Cabin</b></span></div>
+  <nav class="modes" aria-label="Sections">
+    <button type="button" class="mode-btn" data-mode="explore" aria-pressed="true">Explore</button>
+    <button type="button" class="mode-btn" data-mode="images" aria-pressed="false" id="nav-images">CFD reference images</button>
+    <button type="button" class="mode-btn" data-mode="technical" aria-pressed="false">Technical details</button>
+  </nav>
+  <span class="badge-static" title="Every value shown was computed in advance. Nothing is measured or predicted live, and there is no backend.">Precomputed · not live</span>
+</header>
+
+<main id="main">
+  <div id="loading" class="loading" role="status" aria-live="polite">Loading the bus model…</div>
+  <div id="fatal" class="fatal" role="alert" hidden></div>
+
+  <!-- ===================== EXPLORE (default) ===================== -->
+  <section id="explore" class="mode" data-mode="explore" hidden>
+    <div class="ex-grid">
+      <div class="stage glass" id="stage">
+        <div id="stage3d" class="stage3d" tabindex="0" aria-label="3D bus cabin. Drag to rotate, scroll or pinch to zoom, click the coloured slice to inspect a location."></div>
+        <div id="labels" class="labels" aria-hidden="true"></div>
+        <div class="intro" id="intro">
+          <h1>Explore the bus cabin</h1>
+          <p>Explore temperature and airflow inside a simulated bus cabin.</p>
+          <button type="button" class="btn primary big" id="btn-inside">Explore inside →</button>
+        </div>
+        <div class="stage-top">
+          <span id="ex-title" class="ex-title"></span>
+          <span id="ex-status" class="ex-status" role="status" aria-live="polite"></span>
+        </div>
+        <div class="viewbtns" role="group" aria-label="Camera views">
+          <button type="button" class="vbtn" data-cam="front">Front</button>
+          <button type="button" class="vbtn" data-cam="side">Side</button>
+          <button type="button" class="vbtn" data-cam="top">Top</button>
+          <button type="button" class="vbtn" data-cam="reset">Reset view</button>
+        </div>
+        <div class="ex-legend" id="ex-legend" aria-label="Colour legend"></div>
+      </div>
+
+      <aside class="side glass" aria-label="Controls">
+        <section class="scenario" aria-labelledby="scn-h">
+          <h2 id="scn-h">The scenario</h2>
+          <ul class="scn">
+            <li><span class="ic" aria-hidden="true">👥</span><span><b>7</b> occupants</span></li>
+            <li><span class="ic" aria-hidden="true">❄</span><span>Supply air <b>18 °C</b></span></li>
+            <li><span class="ic" aria-hidden="true">☀</span><span>Outdoor <b>35 °C</b></span></li>
+            <li><span class="ic" aria-hidden="true">◐</span><span>Solar heating included</span></li>
+          </ul>
+          <p class="small muted">One simulated scenario · precomputed CFD and AI predictions.</p>
+        </section>
+
+        <fieldset class="ctl">
+          <legend>Show</legend>
+          <div class="seg2" role="radiogroup" aria-label="Quantity">
+            <button type="button" role="radio" data-var="T" aria-checked="true">Temperature</button>
+            <button type="button" role="radio" data-var="speed" aria-checked="false">Airflow speed</button>
+          </div>
+        </fieldset>
+        <fieldset class="ctl">
+          <legend>Look</legend>
+          <div class="seg2" role="radiogroup" aria-label="Look">
+            <button type="button" role="radio" data-look="inside" aria-checked="false">View inside</button>
+            <button type="button" role="radio" data-look="exterior" aria-checked="true">Show exterior</button>
+          </div>
+        </fieldset>
+        <fieldset class="ctl">
+          <legend>Slice through the cabin</legend>
+          <label class="lbl" for="ex-orient">Direction</label>
+          <select id="ex-orient">
+            <option value="horizontal">Floor-to-ceiling (choose a height)</option>
+            <option value="longitudinal">Along the bus (choose a side position)</option>
+            <option value="transverse">Across the bus (choose front to rear)</option>
+          </select>
+          <label class="lbl" for="ex-pos" id="ex-pos-lbl">Height</label>
+          <input id="ex-pos" type="range" min="0" max="0" step="1" value="0">
+          <output id="ex-pos-out" class="small" for="ex-pos"></output>
+        </fieldset>
+        <p class="tip"><span aria-hidden="true">👆</span> Click inside the coloured slice to inspect a location.</p>
+        <details class="ctl more">
+          <summary>More display options</summary>
+          <label class="chk"><input type="checkbox" id="ex-labels" checked> Labels</label>
+          <label class="chk"><input type="checkbox" data-exlayer="occupants" checked> People</label>
+          <label class="chk"><input type="checkbox" data-exlayer="seats" checked> Seats</label>
+          <label class="chk"><input type="checkbox" data-exlayer="hvac" checked> Air vents and openings</label>
+          <label class="chk"><input type="checkbox" data-exlayer="slice" checked> Coloured slice</label>
+          <label class="chk"><input type="checkbox" id="ex-arrows"> Flow direction arrows</label>
+        </details>
+        <button type="button" class="btn compare-btn" id="btn-compare" aria-expanded="false" aria-controls="compare">Compare AI predictions</button>
+      </aside>
+    </div>
+
+    <section class="location glass" id="location" aria-live="polite" aria-labelledby="loc-h">
+      <h2 id="loc-h">Selected location</h2>
+      <div id="loc-body"><p class="muted">Click inside the coloured slice to see the temperature and airflow at that spot.</p></div>
+    </section>
+
+    <section class="compare glass" id="compare" hidden aria-labelledby="cmp-h">
+      <div class="cmp-head">
+        <h2 id="cmp-h">Compare AI predictions with the CFD reference</h2>
+        <button type="button" class="btn ghost" id="btn-compare-close">Close</button>
+      </div>
+      <p class="lead-s">Three neural networks were trained on <b>part</b> of this one CFD simulation and then asked to fill in the regions they never saw. Below: the same slice and the same colour scale for the CFD reference and each network. All values are precomputed.</p>
+      <div class="cmp-src" role="radiogroup" aria-label="Field shown on the 3D slice" id="cmp-src"></div>
+      <div class="cmp-grid" id="cmp-grid"></div>
+      <div class="callout" id="cmp-artefact"></div>
+      <p class="small muted" id="cmp-foot"></p>
+    </section>
+  </section>
+
+  <!-- ===================== CFD REFERENCE IMAGES ===================== -->
+  <section id="images" class="mode page" data-mode="images" hidden>
+    <div class="page-inner">
+      <h1>CFD reference images</h1>
+      <p class="lead">Images supplied with the simulation case. They were <b>not</b> made by this demo. The positions of the section planes were not recorded, so each plane below is <b>estimated</b> by matching the image colours to the exported data. This is a visual consistency check, not a numerical validation.</p>
+      <div id="images-none" class="callout" hidden>This public build does not include the supplied CAD view and STAR-CCM+ renders, because permission to publish them has not been confirmed. They are kept in the local / offline version.</div>
+      <figure class="glass cad-fig" id="cad-fig"><img id="cad-img" alt="Exterior CAD view of the simulated bus, front" loading="lazy">
+        <figcaption id="cad-cap"></figcaption></figure>
+      <div class="ref-gallery" id="ref-gallery"></div>
+    </div>
+  </section>
+
+  <!-- ===================== TECHNICAL DETAILS ===================== -->
+  <section id="technical" class="mode" data-mode="technical" hidden>
+    <nav class="subnav" aria-label="Technical details">
+      <button type="button" class="sub-btn" data-sub="results" aria-pressed="true">Results &amp; metrics</button>
+      <button type="button" class="sub-btn" data-sub="explorer" aria-pressed="false">Error explorer</button>
+      <button type="button" class="sub-btn" data-sub="curves" aria-pressed="false">Learning curves</button>
+      <button type="button" class="sub-btn" data-sub="methods" aria-pressed="false">Methods, provenance &amp; limits</button>
+    </nav>
+
+    <!-- results -->
+    <section class="tsub page-inner" data-sub="results" id="t-results">
+      <h1>Results &amp; metrics</h1>
+      <p class="lead">One steady RANS scenario · VinBus cabin · <span data-bind="n_points"></span> CFD samples. The task is <b>spatial reconstruction</b> of this one simulation: whole blocks of the cabin were hidden from training, and the networks had to fill them in.</p>
+      <div class="models3">
+        <article class="glass"><h3>Vanilla DeepONet</h3><p>An MLP branch over the flattened, canonically ordered boundary samples.</p><p class="pc" data-params="vanilla"></p></article>
+        <article class="glass"><h3>PN-DeepONet</h3><p>A PointNet branch over the same boundary samples, treated as a point set.</p><p class="pc" data-params="pn"></p></article>
+        <article class="glass"><h3>PI-PN-DeepONet</h3><p>PN architecture, warm-started from the selected PN, plus compressible continuity and boundary-condition terms. <b>Not full-RANS physics</b>: momentum and energy are off because k and ε were not exported.</p><p class="pc" data-params="pi"></p></article>
+      </div>
+      <div class="glass table-wrap"><table id="story-metrics" class="metrics"></table></div>
+      <p class="note" id="story-metrics-note"></p>
+      <h2>Train / validation / test split</h2>
+      <div class="two-col">
+        <div>
+          <p>The cabin is cut into about 0.5 m blocks. Whole blocks are held out: 70 % train, 15 % validation, 15 % test, with a 5 cm buffer. Validation chose the checkpoints. Test was scored once, after every checkpoint was frozen.</p>
+          <p class="warn">This is <b>spatial reconstruction of one scenario</b>, not a surrogate that predicts new HVAC settings. With one scenario the boundary input never changes, so the response to different conditions is untested.</p>
+        </div>
+        <figure class="glass"><canvas id="split-canvas" width="900" height="300" aria-label="Held-out spatial blocks"></canvas>
+          <figcaption>Horizontal plane z = <span id="split-z"></span> m. Cyan: validation blocks · orange: test blocks · dark: buffer · grey: training data. Front of the bus on the left.</figcaption></figure>
+      </div>
+      <h2>Pressure</h2>
+      <p>The networks also predict the working pressure (Pa). It is not shown in the main view because differences of a few pascals are hard to read without context; open the <a href="#technical/explorer?var=p&amp;view=horizontal&amp;display=cfd">Error explorer</a> to see it. <span id="ppiezo-note"></span></p>
+    </section>
+
+    <!-- error explorer (advanced) -->
+    <section class="tsub" data-sub="explorer" id="t-explorer" hidden>
+    <div class="explorer" id="explorer">
+    <aside class="panel left glass" aria-label="Controls">
+      <details open class="ctl-group"><summary>Model</summary>
+        <div id="model-list" role="radiogroup" aria-label="Model"></div>
+        <p id="model-note" class="small note"></p>
+      </details>
+      <details open class="ctl-group"><summary>Field</summary>
+        <label class="lbl" for="sel-var">Variable</label>
+        <select id="sel-var">
+          <optgroup label="Primary"><option value="T">Temperature (°C)</option><option value="speed">Air speed (m/s)</option><option value="p">Working pressure (Pa)</option></optgroup>
+          <optgroup label="Velocity components"><option value="u">u (x, rearward)</option><option value="v">v (y, toward doors)</option><option value="w">w (z, up)</option></optgroup>
+        </select>
+        <label class="lbl" for="sel-display">Display</label>
+        <select id="sel-display">
+          <option value="pred">Model field</option><option value="cfd">CFD reference</option>
+          <option value="abs">Absolute error |model − CFD|</option><option value="signed">Signed error (model − CFD)</option>
+          <option value="compare">Compare: CFD · model · |error|</option>
+        </select>
+      </details>
+      <details open class="ctl-group"><summary>View</summary>
+        <div class="seg" role="radiogroup" aria-label="View" id="view-seg">
+          <button type="button" role="radio" data-view="3d">3D</button><button type="button" role="radio" data-view="horizontal">Horizontal</button><button type="button" role="radio" data-view="longitudinal">Longitudinal</button><button type="button" role="radio" data-view="transverse">Transverse</button>
+        </div>
+        <label class="lbl" for="sl-pos">Slice position <output id="sl-pos-out"></output></label>
+        <input id="sl-pos" type="range" min="0" max="0" step="1" value="0">
+        <label class="lbl" for="sel-orient3d">Slice plane shown in 3D</label>
+        <select id="sel-orient3d"><option value="horizontal">Horizontal</option><option value="longitudinal">Longitudinal</option><option value="transverse">Transverse</option></select>
+      </details>
+      <details open class="ctl-group"><summary>Solver render</summary>
+        <label class="lbl" for="sel-ref">Compare with a STAR-CCM+ render</label>
+        <select id="sel-ref"><option value="">— none —</option></select>
+        <p class="small note">Opens the slice at the estimated plane and uses the render's own colour bar and range.</p>
+      </details>
+      <details open class="ctl-group"><summary>Layers</summary>
+        <label class="chk"><input type="checkbox" data-layer="cabin_shell" checked> Cabin shell</label>
+        <label class="chk"><input type="checkbox" data-layer="seats" checked> Seats</label>
+        <label class="chk"><input type="checkbox" data-layer="occupants" checked> Occupants</label>
+        <label class="chk"><input type="checkbox" data-layer="hvac" checked> HVAC / leak patches</label>
+        <label class="chk"><input type="checkbox" data-layer="slice" checked> Slice plane (3D)</label>
+        <label class="chk"><input type="checkbox" data-layer="cloud"> 3D field cloud</label>
+        <label class="chk"><input type="checkbox" id="chk-split"> Mark held-out blocks</label>
+        <label class="chk"><input type="checkbox" id="chk-vec"> In-plane flow arrows (steady field)</label>
+      </details>
+      <div class="btn-row">
+        <button type="button" class="btn" id="btn-reset">Reset camera</button>
+        <button type="button" class="btn" id="btn-shot">Screenshot</button>
+      </div>
+    </aside>
+
+    <div class="viewport glass" id="viewport">
+      <div class="vp-head"><span id="vp-title"></span><span id="vp-status" class="small" role="status" aria-live="polite"></span></div>
+      <div id="vp3d" class="vp3d" tabindex="0" aria-label="3D cabin view. Drag to orbit, scroll to zoom, click the slice or the field points to probe."></div>
+      <figure id="ref-panel" class="ref-panel" hidden><img id="ref-img" alt=""><figcaption id="ref-cap"></figcaption></figure>
+      <div id="vp2d" class="vp2d" hidden></div>
+      <div class="legend" id="legend" aria-label="Colour legend"></div>
+    </div>
+
+    <aside class="panel right glass" aria-label="Probe and metrics">
+      <section aria-labelledby="probe-h"><h3 id="probe-h">Virtual probe</h3>
+        <p class="small muted" id="probe-hint">Click a slice (2D or 3D) or a field-cloud point. A probe reads stored values; it is not a live sensor.</p>
+        <div id="probe"></div></section>
+      <section aria-labelledby="met-h"><h3 id="met-h">Metrics</h3>
+        <label class="lbl" for="sel-msplit">Split</label>
+        <select id="sel-msplit"><option value="test">Spatial test (held-out blocks)</option><option value="val">Validation (selection)</option><option value="train">Train fit</option><option value="full_domain_fit">Full-domain fit (NOT a test score)</option></select>
+        <div id="metrics-box"></div>
+      </section>
+    </aside>
+
+    <details class="bottom glass" id="bottom" open>
+      <summary>Analysis: profile through probe · RMSE by variable · slice error histogram</summary>
+      <div class="charts">
+        <figure><figcaption id="ch-prof-cap">Profile through probe</figcaption><canvas id="ch-prof" width="430" height="210"></canvas></figure>
+        <figure><figcaption id="ch-bars-cap">Test RMSE, interior</figcaption><canvas id="ch-bars" width="430" height="210"></canvas></figure>
+        <figure><figcaption id="ch-hist-cap">|error| on this slice</figcaption><canvas id="ch-hist" width="430" height="210"></canvas></figure>
+      </div>
+    </details>
+    </div>
+    </section>
+
+    <!-- learning curves -->
+    <section class="tsub page-inner" data-sub="curves" id="t-curves" hidden>
+      <h1>Learning curves</h1>
+      <p class="lead">Validation score during training (lower is better). Checkpoints were selected on validation only; the ring marks the selected checkpoint. Read from the training logs of this run.</p>
+      <label class="lbl" for="sel-curve">Quantity</label>
+      <select id="sel-curve" class="narrow">
+        <option value="val_score">Selection score (mean RMSE/scale, all variables)</option>
+        <option value="val_rmse_T">Validation RMSE, temperature [K]</option>
+        <option value="val_rmse_v">Validation RMSE, v velocity [m/s]</option>
+        <option value="val_rmse_u">Validation RMSE, u velocity [m/s]</option>
+        <option value="val_rmse_w">Validation RMSE, w velocity [m/s]</option>
+        <option value="val_rmse_p">Validation RMSE, pressure [Pa]</option>
+      </select>
+      <figure class="glass curve-fig"><canvas id="curve-canvas" width="1000" height="420" aria-label="Validation learning curves"></canvas>
+        <figcaption id="curve-cap"></figcaption></figure>
+    </section>
+
+    <!-- methods -->
+    <section class="tsub page-inner" data-sub="methods" id="t-methods" hidden>
+      <div class="about-inner glass" id="about-body"></div>
+      <h2>Limitations</h2>
+      <ul class="limits" id="limits"></ul>
+    </section>
+  </section>
+</main>
+<footer class="foot small muted">Sensora · Explore the Bus Cabin · run <span data-bind="run_id"></span> · assets <span data-bind="asset_version"></span> · precomputed, static, no backend<span id="build-profile"></span></footer>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

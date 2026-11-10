@@ -1,0 +1,31 @@
+{
+  "asset_version": "20261110141614",
+  "run_id": "20261110T025048Z",
+  "full_site": {
+    "files": 892,
+    "total_MB": 16.58
+  },
+  "public_site": {
+    "files": 885,
+    "total_MB": 15.86,
+    "omitted_images": [
+      "reference/2aOboRAE2Q23r6J65hTPLEWnPeOTEU7o5DFvH504.jpg",
+      "reference/2aOboRAG7X2zeVfWxC3luxp16eZhJrAHDOnfUj9U.jpg",
+      "reference/2aOboRAG7XJyyHNfu6WUQuYUc7Ub3esDI93XbRJo.jpg",
+      "reference/2aOboRAG7XOUilfGmz2SVfp5qJuZo0tI6BgOGGY4.jpg",
+      "reference/2aOboRAG7XpFl7po4b8kDYDhGkv58O5ZI0VZuyAK.jpg",
+      "reference/2aOboRAG7Xc6psOoS2KkQdOkOqVWM1ljdij4ZyfQ.jpg",
+      "reference/2aOboRAG7XFmgMd72t036qTbIHWYs1baninE1q40.jpg"
+    ]
+  },
+  "code_MB": 0.82,
+  "first_view_bus_MB": 2.22,
+  "explore_inside_MB": 2.41,
+  "budget": {
+    "first_view_bus_MB_max": 3.0,
+    "explore_inside_MB_max": 4.0
+  },
+  "largest_file_MB": 1.149,
+  "budget_ok": true,
+  "profile": "public (GitHub Pages)"
+}

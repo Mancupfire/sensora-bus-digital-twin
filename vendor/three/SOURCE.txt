@@ -1,0 +1,1 @@
+three.js r169 (npm three@0.169.0), MIT License — copied from a local node_modules install; files: three.module.min.js, OrbitControls.js (examples/jsm/controls).
